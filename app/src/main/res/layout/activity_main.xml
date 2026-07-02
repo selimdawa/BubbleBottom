@@ -7,7 +7,7 @@
     android:background="@color/white">
 
     <TextView
-        android:id="@+id/tv_selected"
+        android:id="@+id/fragment_selected"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
@@ -28,7 +28,7 @@
         app:mbn_circleColor="@color/white"
         app:mbn_countBackgroundColor="@color/orange"
         app:mbn_countTextColor="@color/white"
-        app:mbn_countTypeface="fonts/SourceSansPro-Regular.ttf"
+        app:mbn_countTypeface="fonts/SourceSansPro-SemiBold.ttf"
         app:mbn_defaultIconColor="@color/blue"
         app:mbn_hasAnimation="true" />
 

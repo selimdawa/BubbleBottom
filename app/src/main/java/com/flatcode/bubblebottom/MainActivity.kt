@@ -37,7 +37,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        binding.tvSelected.typeface =
+        binding.fragmentSelected.typeface =
             Typeface.createFromAsset(assets, "fonts/SourceSansPro-Regular.ttf")
 
         binding.bottomNavigation.apply {
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
             setOnShowListener { model ->
                 val name = getMenuName(model.id)
-                binding.tvSelected.text = getString(R.string.main_page_selected, name)
+                binding.fragmentSelected.text = getString(R.string.main_page_selected, name)
             }
 
             setOnClickMenuListener { model ->
