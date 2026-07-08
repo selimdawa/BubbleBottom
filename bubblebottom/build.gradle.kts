@@ -1,10 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
-    id("maven-publish")
+    alias(libs.plugins.vanniktech)
 }
 
 android {
-    namespace = "com.selimdawa.bubblebottom"
+    namespace = "io.selimdawa.bubblebottom"
     compileSdk = 37
 
     defaultConfig {
@@ -17,10 +17,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
             )
         }
     }
@@ -33,10 +31,6 @@ android {
     buildFeatures {
         viewBinding = true
     }
-
-    publishing {
-        singleVariant("release")
-    }
 }
 
 afterEvaluate {
@@ -45,6 +39,45 @@ afterEvaluate {
             register<MavenPublication>("release") {
                 from(components["release"])
             }
+        }
+    }
+}
+
+mavenPublishing {
+
+    coordinates(
+        groupId = "io.github.selimdawa", artifactId = "bubble-bottom", version = "1.0.0"
+    )
+
+    publishToMavenCentral(automaticRelease = true)
+
+    signAllPublications()
+
+    pom {
+        name.set("Bubble Bottom")
+        description.set("A customizable Android Bubble Bottom Navigation library with smooth animations and modern UI design.")
+
+        url.set("https://github.com/selimdawa/BubbleBottom")
+
+        licenses {
+            license {
+                name.set("Apache License, Version 2.0")
+                url.set("https://www.apache.org/licenses/LICENSE-2.0.txt")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("selimdawa")
+                name.set("Selim Dawa")
+                email.set("selimdawa@gmail.com")
+            }
+        }
+
+        scm {
+            url.set("https://github.com/selimdawa/BubbleBottom")
+            connection.set("scm:git:https://github.com/selimdawa/BubbleBottom.git")
+            developerConnection.set("scm:git:ssh://git@github.com:selimdawa/BubbleBottom.git")
         }
     }
 }
