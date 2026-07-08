@@ -33,21 +33,8 @@ android {
     }
 }
 
-afterEvaluate {
-    publishing {
-        publications {
-            register<MavenPublication>("release") {
-                from(components["release"])
-            }
-        }
-    }
-}
-
 mavenPublishing {
-
-    coordinates(
-        groupId = "io.github.selimdawa", artifactId = "bubble-bottom", version = "1.0.0"
-    )
+    coordinates(groupId = "io.github.selimdawa", artifactId = "bubble-bottom", version = "1.0.0")
 
     publishToMavenCentral(automaticRelease = true)
 

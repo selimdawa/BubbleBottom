@@ -11,7 +11,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.MainApp">
         <activity
-            android:name="com.flatcode.bubblebottom.MainActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
