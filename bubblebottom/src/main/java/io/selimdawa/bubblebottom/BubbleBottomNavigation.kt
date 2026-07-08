@@ -12,7 +12,6 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.core.graphics.toColorInt
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
-import com.selimdawa.bubblebottom.R
 import kotlin.math.abs
 
 internal typealias IBottomNavigationListener = (model: BubbleBottomNavigation.Model) -> Unit
@@ -97,9 +96,7 @@ class BubbleBottomNavigation : FrameLayout {
     }
 
     constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(
-        context,
-        attrs,
-        defStyleAttr
+        context, attrs, defStyleAttr
     ) {
         setAttributeFromXml(context, attrs)
         initializeViews()
@@ -107,18 +104,15 @@ class BubbleBottomNavigation : FrameLayout {
 
     private fun setAttributeFromXml(context: Context, attrs: AttributeSet) {
         val a = context.theme.obtainStyledAttributes(
-            attrs,
-            R.styleable.MeowBottomNavigation, 0, 0
+            attrs, R.styleable.MeowBottomNavigation, 0, 0
         )
         try {
             a.apply {
                 defaultIconColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_defaultIconColor,
-                    defaultIconColor
+                    R.styleable.MeowBottomNavigation_mbn_defaultIconColor, defaultIconColor
                 )
                 selectedIconColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_selectedIconColor,
-                    selectedIconColor
+                    R.styleable.MeowBottomNavigation_mbn_selectedIconColor, selectedIconColor
                 )
                 backgroundBottomColor = getColor(
                     R.styleable.MeowBottomNavigation_mbn_backgroundBottomColor,
@@ -129,8 +123,7 @@ class BubbleBottomNavigation : FrameLayout {
                 countTextColor =
                     getColor(R.styleable.MeowBottomNavigation_mbn_countTextColor, countTextColor)
                 countBackgroundColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_countBackgroundColor,
-                    countBackgroundColor
+                    R.styleable.MeowBottomNavigation_mbn_countBackgroundColor, countBackgroundColor
                 )
                 rippleColor =
                     getColor(R.styleable.MeowBottomNavigation_mbn_rippleColor, rippleColor)
@@ -138,8 +131,8 @@ class BubbleBottomNavigation : FrameLayout {
                     getColor(R.styleable.MeowBottomNavigation_mbn_shadowColor, shadowColor)
 
                 val typeface = getString(R.styleable.MeowBottomNavigation_mbn_countTypeface)
-                if (!typeface.isNullOrEmpty())
-                    countTypeface = Typeface.createFromAsset(context.assets, typeface)
+                if (!typeface.isNullOrEmpty()) countTypeface =
+                    Typeface.createFromAsset(context.assets, typeface)
 
                 hasAnimation =
                     getBoolean(R.styleable.MeowBottomNavigation_mbn_hasAnimation, hasAnimation)
@@ -175,10 +168,9 @@ class BubbleBottomNavigation : FrameLayout {
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         if (selectedId == -1) {
-            bezierView.bezierX =
-                if (layoutDirection == LayoutDirection.RTL) measuredWidth + 72f.dp(
-                    context
-                ) else (-72f).dp(context)
+            bezierView.bezierX = if (layoutDirection == LayoutDirection.RTL) measuredWidth + 72f.dp(
+                context
+            ) else (-72f).dp(context)
         }
         if (selectedId != -1) {
             show(selectedId, false)
@@ -200,15 +192,13 @@ class BubbleBottomNavigation : FrameLayout {
             countTypeface = this@BubbleBottomNavigation.countTypeface
             rippleColor = this@BubbleBottomNavigation.rippleColor
             onClickListener = {
-                if (isShowing(model.id))
-                    onReselectListener(model)
+                if (isShowing(model.id)) onReselectListener(model)
 
                 if (!cell.isEnabledCell && !isAnimating) {
                     show(model.id, hasAnimation)
                     onClickedListener(model)
                 } else {
-                    if (callListenerWhenIsSelected)
-                        onClickedListener(model)
+                    if (callListenerWhenIsSelected) onClickedListener(model)
                 }
             }
             disableCell(hasAnimation)
@@ -220,8 +210,7 @@ class BubbleBottomNavigation : FrameLayout {
     }
 
     private fun updateAllIfAllowDraw() {
-        if (!allowDraw)
-            return
+        if (!allowDraw) return
 
         cells.forEach {
             it.defaultIconColor = defaultIconColor
@@ -256,12 +245,9 @@ class BubbleBottomNavigation : FrameLayout {
             addUpdateListener {
                 val f = it.animatedFraction
                 val newX = cell.x + (cell.measuredWidth / 2)
-                if (newX > beforeX)
-                    bezierView.bezierX = f * (newX - beforeX) + beforeX
-                else
-                    bezierView.bezierX = beforeX - f * (beforeX - newX)
-                if (f == 1f)
-                    isAnimating = false
+                if (newX > beforeX) bezierView.bezierX = f * (newX - beforeX) + beforeX
+                else bezierView.bezierX = beforeX - f * (beforeX - newX)
+                if (f == 1f) isAnimating = false
             }
             start()
         }
@@ -306,8 +292,7 @@ class BubbleBottomNavigation : FrameLayout {
 
     fun getModelById(id: Int): Model? {
         models.forEach {
-            if (it.id == id)
-                return it
+            if (it.id == id) return it
         }
         return null
     }
@@ -319,8 +304,7 @@ class BubbleBottomNavigation : FrameLayout {
     fun getModelPosition(id: Int): Int {
         for (i in models.indices) {
             val item = models[i]
-            if (item.id == id)
-                return i
+            if (item.id == id) return i
         }
         return -1
     }

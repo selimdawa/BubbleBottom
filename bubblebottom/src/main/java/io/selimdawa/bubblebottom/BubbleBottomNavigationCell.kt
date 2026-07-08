@@ -14,8 +14,7 @@ import android.widget.RelativeLayout
 import androidx.core.view.ViewCompat
 import androidx.core.widget.ImageViewCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
-import com.selimdawa.bubblebottom.R
-import com.selimdawa.bubblebottom.databinding.BubbleBottomCellBinding
+import io.selimdawa.bubblebottom.databinding.BubbleBottomCellBinding
 
 @Suppress("unused")
 class BubbleBottomNavigationCell @JvmOverloads constructor(
