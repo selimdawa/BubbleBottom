@@ -39,7 +39,7 @@ Add the dependency:
 
 ```gradle
 dependencies {
-    implementation("com.github.selimdawa:BubbleBottom:latest-version")
+    implementation("io.github.selimdawa:bubble-bottom:latest-version")
 }
 ```
 
@@ -50,7 +50,7 @@ Or using Version Catalog:
 bubbleBottom = "latest-version"
 
 [libraries]
-bubble-bottom = { module = "com.github.selimdawa:BubbleBottom", version.ref = "bubbleBottom" }
+bubble-bottom = { module = "io.github.selimdawa:bubble-bottom", version.ref = "bubbleBottom" }
 ```
 
 ---
