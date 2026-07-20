@@ -34,7 +34,7 @@ android {
 }
 
 mavenPublishing {
-    coordinates(groupId = "io.github.selimdawa", artifactId = "bubble-bottom", version = "1.0.0")
+    coordinates(groupId = "io.github.selimdawa", artifactId = "bubble-bottom", version = "1.0.1")
 
     publishToMavenCentral(automaticRelease = true)
 
