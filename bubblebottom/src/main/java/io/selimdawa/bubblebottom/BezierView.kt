@@ -1,11 +1,9 @@
 package io.selimdawa.bubblebottom
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Path
-import android.graphics.PointF
 import android.util.AttributeSet
 import android.view.View
 
@@ -13,16 +11,19 @@ class BezierView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttrs: Int = 0
 ) : View(context, attrs, defStyleAttrs) {
 
-    private var mainPaint: Paint? = null
-    private var shadowPaint: Paint? = null
-    private var mainPath: Path? = null
-    private var shadowPath: Path? = null
-    private var outerArray: Array<PointF>
-    private var innerArray: Array<PointF>
-    private var progressArray: Array<PointF>
+    private val mainPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        strokeWidth = 0f
+        style = Paint.Style.FILL
+    }
+    private val shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val mainPath = Path()
+    private val shadowPath = Path()
+    private val outerArray = FloatArray(22)
+    private val innerArray = FloatArray(22)
+    private val progressArray = FloatArray(22)
 
-    private var width = 0f
-    private var height = 0f
+    private var viewWidth = 0f
+    private var viewHeight = 0f
     private var bezierOuterWidth = 0f
     private var bezierOuterHeight = 0f
     private var bezierInnerWidth = 0f
@@ -32,13 +33,14 @@ class BezierView @JvmOverloads constructor(
     var color = 0
         set(value) {
             field = value
-            mainPaint?.color = field
+            mainPaint.color = field
             invalidate()
         }
+
     var shadowColor = 0
         set(value) {
             field = value
-            shadowPaint?.setShadowLayer(4f.dp(context), 0f, 0f, shadowColor)
+            shadowPaint.setShadowLayer(4f.dp(context), 0f, 0f, shadowColor)
             invalidate()
         }
 
@@ -46,6 +48,7 @@ class BezierView @JvmOverloads constructor(
         set(value) {
             if (value == field) return
             field = value
+            updateArrays()
             invalidate()
         }
 
@@ -53,175 +56,135 @@ class BezierView @JvmOverloads constructor(
         set(value) {
             if (value == field) return
             field = value
-
-            progressArray[1].x = bezierX - bezierInnerWidth / 2
-            progressArray[2].x = bezierX - bezierInnerWidth / 4
-            progressArray[3].x = bezierX - bezierInnerWidth / 4
-            progressArray[4].x = bezierX
-            progressArray[5].x = bezierX + bezierInnerWidth / 4
-            progressArray[6].x = bezierX + bezierInnerWidth / 4
-            progressArray[7].x = bezierX + bezierInnerWidth / 2
-            for (i in 2..6) {
-                if (progress <= 1f) {
-                    progressArray[i].y = calculate(innerArray[i].y, outerArray[i].y)
-                } else {
-                    progressArray[i].y = calculate(outerArray[i].y, innerArray[i].y)
-                }
-            }
-            if (field == 2f) field = 0f
-
+            updateArrays()
             invalidate()
         }
 
+    private fun updateArrays() {
+        calculateOuter()
+        calculateInner()
+        progressArray[2] = bezierX - bezierInnerWidth / 2
+        progressArray[4] = bezierX - bezierInnerWidth / 4
+        progressArray[6] = bezierX - bezierInnerWidth / 4
+        progressArray[8] = bezierX
+        progressArray[10] = bezierX + bezierInnerWidth / 4
+        progressArray[12] = bezierX + bezierInnerWidth / 4
+        progressArray[14] = bezierX + bezierInnerWidth / 2
+
+        progressArray[0] = outerArray[0]
+        progressArray[16] = outerArray[16]
+        progressArray[18] = outerArray[18]
+        progressArray[20] = outerArray[20]
+
+        for (i in 0..10) {
+            if (i in 2..6) {
+                progressArray[i * 2 + 1] = if (progress <= 1f) {
+                    calculate(innerArray[i * 2 + 1], outerArray[i * 2 + 1])
+                } else {
+                    calculate(outerArray[i * 2 + 1], innerArray[i * 2 + 1])
+                }
+            } else {
+                progressArray[i * 2 + 1] = if (progress <= 1f) {
+                    innerArray[i * 2 + 1]
+                } else {
+                    outerArray[i * 2 + 1]
+                }
+            }
+        }
+    }
 
     init {
         setWillNotDraw(false)
-
-        mainPath = Path()
-        shadowPath = Path()
-        outerArray = Array(11) { PointF() }
-        innerArray = Array(11) { PointF() }
-        progressArray = Array(11) { PointF() }
-
-        mainPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        mainPaint?.apply {
-            strokeWidth = 0f
-            isAntiAlias = true
-            style = Paint.Style.FILL
-            color = this.color
-        }
-
-        shadowPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-        shadowPaint?.apply {
-            isAntiAlias = true
-            setShadowLayer(4f.dp(context), 0f, 0f, shadowColor)
-        }
-
-        color = color
-        shadowColor = shadowColor
-
         setLayerType(LAYER_TYPE_SOFTWARE, shadowPaint)
     }
 
-    @SuppressLint("DrawAllocation")
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        width = MeasureSpec.getSize(widthMeasureSpec).toFloat()
-        height = MeasureSpec.getSize(heightMeasureSpec).toFloat()
+        viewWidth = MeasureSpec.getSize(widthMeasureSpec).toFloat()
+        viewHeight = MeasureSpec.getSize(heightMeasureSpec).toFloat()
         bezierOuterWidth = 72f.dp(context)
         bezierOuterHeight = 8f.dp(context)
         bezierInnerWidth = 124f.dp(context)
         bezierInnerHeight = 16f.dp(context)
-
-        val extra = shadowHeight
-        outerArray[0] = PointF(0f, bezierOuterHeight + extra)
-        outerArray[1] = PointF((bezierX - bezierOuterWidth / 2), bezierOuterHeight + extra)
-        outerArray[2] = PointF(bezierX - bezierOuterWidth / 4, bezierOuterHeight + extra)
-        outerArray[3] = PointF(bezierX - bezierOuterWidth / 4, extra)
-        outerArray[4] = PointF(bezierX, extra)
-        outerArray[5] = PointF(bezierX + bezierOuterWidth / 4, extra)
-        outerArray[6] = PointF(bezierX + bezierOuterWidth / 4, bezierOuterHeight + extra)
-        outerArray[7] = PointF(bezierX + bezierOuterWidth / 2, bezierOuterHeight + extra)
-        outerArray[8] = PointF(width, bezierOuterHeight + extra)
-        outerArray[9] = PointF(width, height)
-        outerArray[10] = PointF(0f, height)
+        updateArrays()
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-        mainPath!!.reset()
-        shadowPath!!.reset()
+        mainPath.rewind()
+        shadowPath.rewind()
 
-        if (progress == 0f) {
-            drawInner(canvas, true)
-            drawInner(canvas, false)
+        if (progress == 0f || progress >= 2f) {
+            drawPath(canvas, true, isInner = true)
+            drawPath(canvas, false, isInner = true)
         } else {
-            drawProgress(canvas, true)
-            drawProgress(canvas, false)
+            drawPath(canvas, true, isInner = false)
+            drawPath(canvas, false, isInner = false)
         }
+
+        if (progress >= 2f) progress = 0f
     }
 
-    private fun drawInner(canvas: Canvas, isShadow: Boolean) {
+    private fun drawPath(canvas: Canvas, isShadow: Boolean, isInner: Boolean) {
         val paint = if (isShadow) shadowPaint else mainPaint
         val path = if (isShadow) shadowPath else mainPath
 
-        calculateInner()
+        val array = if (isInner) innerArray else progressArray
 
-        path!!.lineTo(innerArray[0].x, innerArray[0].y)
-        path.lineTo(innerArray[1].x, innerArray[1].y)
-        path.cubicTo(
-            innerArray[2].x,
-            innerArray[2].y,
-            innerArray[3].x,
-            innerArray[3].y,
-            innerArray[4].x,
-            innerArray[4].y
-        )
-        path.cubicTo(
-            innerArray[5].x,
-            innerArray[5].y,
-            innerArray[6].x,
-            innerArray[6].y,
-            innerArray[7].x,
-            innerArray[7].y
-        )
-        path.lineTo(innerArray[8].x, innerArray[8].y)
-        path.lineTo(innerArray[9].x, innerArray[9].y)
-        path.lineTo(innerArray[10].x, innerArray[10].y)
+        path.apply {
+            moveTo(array[0], array[1])
+            lineTo(array[2], array[3])
+            cubicTo(array[4], array[5], array[6], array[7], array[8], array[9])
+            cubicTo(
+                array[10], array[11], array[12], array[13], array[14], array[15]
+            )
+            lineTo(array[16], array[17])
+            lineTo(array[18], array[19])
+            lineTo(array[20], array[21])
+            close()
+        }
 
-        progressArray = innerArray.clone()
+        canvas.drawPath(path, paint)
+    }
 
-        canvas.drawPath(path, paint!!)
+    private fun calculateOuter() {
+        val extra = shadowHeight
+        setPoint(outerArray, 0, 0f, bezierOuterHeight + extra)
+        setPoint(outerArray, 1, bezierX - bezierOuterWidth / 2, bezierOuterHeight + extra)
+        setPoint(outerArray, 2, bezierX - bezierOuterWidth / 4, bezierOuterHeight + extra)
+        setPoint(outerArray, 3, bezierX - bezierOuterWidth / 4, extra)
+        setPoint(outerArray, 4, bezierX, extra)
+        setPoint(outerArray, 5, bezierX + bezierOuterWidth / 4, extra)
+        setPoint(outerArray, 6, bezierX + bezierOuterWidth / 4, bezierOuterHeight + extra)
+        setPoint(outerArray, 7, bezierX + bezierOuterWidth / 2, bezierOuterHeight + extra)
+        setPoint(outerArray, 8, viewWidth, bezierOuterHeight + extra)
+        setPoint(outerArray, 9, viewWidth, viewHeight)
+        setPoint(outerArray, 10, 0f, viewHeight)
     }
 
     private fun calculateInner() {
         val extra = shadowHeight
-        innerArray[0] = PointF(0f, bezierInnerHeight + extra)
-        innerArray[1] = PointF((bezierX - bezierInnerWidth / 2), bezierInnerHeight + extra)
-        innerArray[2] = PointF(bezierX - bezierInnerWidth / 4, bezierInnerHeight + extra)
-        innerArray[3] = PointF(bezierX - bezierInnerWidth / 4, height - extra)
-        innerArray[4] = PointF(bezierX, height - extra)
-        innerArray[5] = PointF(bezierX + bezierInnerWidth / 4, height - extra)
-        innerArray[6] = PointF(bezierX + bezierInnerWidth / 4, bezierInnerHeight + extra)
-        innerArray[7] = PointF(bezierX + bezierInnerWidth / 2, bezierInnerHeight + extra)
-        innerArray[8] = PointF(width, bezierInnerHeight + extra)
-        innerArray[9] = PointF(width, height)
-        innerArray[10] = PointF(0f, height)
+        setPoint(innerArray, 0, 0f, bezierInnerHeight + extra)
+        setPoint(innerArray, 1, bezierX - bezierInnerWidth / 2, bezierInnerHeight + extra)
+        setPoint(innerArray, 2, bezierX - bezierInnerWidth / 4, bezierInnerHeight + extra)
+        setPoint(innerArray, 3, bezierX - bezierInnerWidth / 4, viewHeight - extra)
+        setPoint(innerArray, 4, bezierX, viewHeight - extra)
+        setPoint(innerArray, 5, bezierX + bezierInnerWidth / 4, viewHeight - extra)
+        setPoint(innerArray, 6, bezierX + bezierInnerWidth / 4, bezierInnerHeight + extra)
+        setPoint(innerArray, 7, bezierX + bezierInnerWidth / 2, bezierInnerHeight + extra)
+        setPoint(innerArray, 8, viewWidth, bezierInnerHeight + extra)
+        setPoint(innerArray, 9, viewWidth, viewHeight)
+        setPoint(innerArray, 10, 0f, viewHeight)
     }
 
-    private fun drawProgress(canvas: Canvas, isShadow: Boolean) {
-        val paint = if (isShadow) shadowPaint else mainPaint
-        val path = if (isShadow) shadowPath else mainPath
-
-        path!!.lineTo(progressArray[0].x, progressArray[0].y)
-        path.lineTo(progressArray[1].x, progressArray[1].y)
-        path.cubicTo(
-            progressArray[2].x,
-            progressArray[2].y,
-            progressArray[3].x,
-            progressArray[3].y,
-            progressArray[4].x,
-            progressArray[4].y
-        )
-        path.cubicTo(
-            progressArray[5].x,
-            progressArray[5].y,
-            progressArray[6].x,
-            progressArray[6].y,
-            progressArray[7].x,
-            progressArray[7].y
-        )
-        path.lineTo(progressArray[8].x, progressArray[8].y)
-        path.lineTo(progressArray[9].x, progressArray[9].y)
-        path.lineTo(progressArray[10].x, progressArray[10].y)
-
-        canvas.drawPath(path, paint!!)
+    private fun setPoint(array: FloatArray, index: Int, x: Float, y: Float) {
+        array[index * 2] = x
+        array[index * 2 + 1] = y
     }
 
     private fun calculate(start: Float, end: Float): Float {
         var p = progress
         if (p > 1f) p = progress - 1f
-        if (p in 0.9f..1f) calculateInner()
         return (p * (end - start)) + start
     }
 }

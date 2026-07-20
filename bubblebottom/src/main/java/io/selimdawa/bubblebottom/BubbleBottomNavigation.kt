@@ -2,32 +2,41 @@
 
 package io.selimdawa.bubblebottom
 
-import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.Typeface
+import android.os.Bundle
+import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.LayoutDirection
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.core.content.ContextCompat
+import androidx.core.os.BundleCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 internal typealias IBottomNavigationListener = (model: BubbleBottomNavigation.Model) -> Unit
 
-@Suppress("MemberVisibilityCanBePrivate")
 class BubbleBottomNavigation @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     var models = ArrayList<Model>()
+
     var cells = ArrayList<BubbleBottomNavigationCell>()
         private set
-    private var callListenerWhenIsSelected = false
 
+    private var callListenerWhenIsSelected = false
     private var selectedId = -1
 
     private var onClickedListener: IBottomNavigationListener = {}
@@ -37,49 +46,65 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     private var heightCell = 96.dp(context)
     private var isAnimating = false
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var animationJob: Job? = null
+    private var secondAnimationJob: Job? = null
+
+    private val _selectedIdFlow = MutableStateFlow(-1)
+
+    val selectedIdFlow: StateFlow<Int> = _selectedIdFlow.asStateFlow()
+
     var defaultIconColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     var selectedIconColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     var backgroundBottomColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     var circleColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     private var shadowColor = 0
+
     var countTextColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     var countBackgroundColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     var countTypeface: Typeface? = null
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
+
     var hasAnimation: Boolean = true
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
-    private var rippleColor = 0
 
+    private var rippleColor = 0
     private var allowDraw = false
 
     private lateinit var llCells: LinearLayout
@@ -103,26 +128,45 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     }
 
     private fun setAttributeFromXml(context: Context, attrs: AttributeSet) {
-        context.theme.obtainStyledAttributes(attrs, R.styleable.BubbleBottomNavigation, 0, 0).apply {
-            try {
-                defaultIconColor = getColor(R.styleable.BubbleBottomNavigation_mbn_defaultIconColor, defaultIconColor)
-                selectedIconColor = getColor(R.styleable.BubbleBottomNavigation_mbn_selectedIconColor, selectedIconColor)
-                backgroundBottomColor = getColor(R.styleable.BubbleBottomNavigation_mbn_backgroundBottomColor, backgroundBottomColor)
-                circleColor = getColor(R.styleable.BubbleBottomNavigation_mbn_circleColor, circleColor)
-                countTextColor = getColor(R.styleable.BubbleBottomNavigation_mbn_countTextColor, countTextColor)
-                countBackgroundColor = getColor(R.styleable.BubbleBottomNavigation_mbn_countBackgroundColor, countBackgroundColor)
-                rippleColor = getColor(R.styleable.BubbleBottomNavigation_mbn_rippleColor, rippleColor)
-                shadowColor = getColor(R.styleable.BubbleBottomNavigation_mbn_shadowColor, shadowColor)
+        context.theme.obtainStyledAttributes(attrs, R.styleable.BubbleBottomNavigation, 0, 0)
+            .apply {
+                try {
+                    defaultIconColor = getColor(
+                        R.styleable.BubbleBottomNavigation_mbn_defaultIconColor, defaultIconColor
+                    )
+                    selectedIconColor = getColor(
+                        R.styleable.BubbleBottomNavigation_mbn_selectedIconColor, selectedIconColor
+                    )
+                    backgroundBottomColor = getColor(
+                        R.styleable.BubbleBottomNavigation_mbn_backgroundBottomColor,
+                        backgroundBottomColor
+                    )
+                    circleColor =
+                        getColor(R.styleable.BubbleBottomNavigation_mbn_circleColor, circleColor)
+                    countTextColor = getColor(
+                        R.styleable.BubbleBottomNavigation_mbn_countTextColor, countTextColor
+                    )
+                    countBackgroundColor = getColor(
+                        R.styleable.BubbleBottomNavigation_mbn_countBackgroundColor,
+                        countBackgroundColor
+                    )
+                    rippleColor =
+                        getColor(R.styleable.BubbleBottomNavigation_mbn_rippleColor, rippleColor)
+                    shadowColor =
+                        getColor(R.styleable.BubbleBottomNavigation_mbn_shadowColor, shadowColor)
 
-                getString(R.styleable.BubbleBottomNavigation_mbn_countTypeface)?.let {
-                    if (it.isNotEmpty()) countTypeface = Typeface.createFromAsset(context.assets, it)
+                    getString(R.styleable.BubbleBottomNavigation_mbn_countTypeface)?.let {
+                        if (it.isNotEmpty()) countTypeface =
+                            Typeface.createFromAsset(context.assets, it)
+                    }
+
+                    hasAnimation = getBoolean(
+                        R.styleable.BubbleBottomNavigation_mbn_hasAnimation, hasAnimation
+                    )
+                } finally {
+                    recycle()
                 }
-
-                hasAnimation = getBoolean(R.styleable.BubbleBottomNavigation_mbn_hasAnimation, hasAnimation)
-            } finally {
-                recycle()
             }
-        }
     }
 
     private fun initializeViews() {
@@ -206,6 +250,8 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     private fun anim(cell: BubbleBottomNavigationCell, id: Int, enableAnimation: Boolean = true) {
         isAnimating = true
+        animationJob?.cancel()
+        secondAnimationJob?.cancel()
 
         val pos = getModelPosition(id)
         val nowPos = getModelPosition(selectedId)
@@ -214,27 +260,22 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
         val animDuration = if (enableAnimation && hasAnimation) d else 1L
         val animInterpolator = FastOutSlowInInterpolator()
+        val beforeX = bezierView.bezierX
 
-        ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = animDuration
-            interpolator = animInterpolator
-            val beforeX = bezierView.bezierX
-            addUpdateListener {
-                val f = it.animatedFraction
+        animationJob = scope.launch {
+            animateValue(animDuration, animInterpolator) { f ->
                 val newX = cell.x + (cell.measuredWidth / 2)
                 bezierView.bezierX = if (newX > beforeX) f * (newX - beforeX) + beforeX
                 else beforeX - f * (beforeX - newX)
-                if (f == 1f) isAnimating = false
             }
-            start()
+            isAnimating = false
         }
 
         if (abs(pos - nowPos) > 1) {
-            ValueAnimator.ofFloat(0f, 1f).apply {
-                duration = animDuration
-                interpolator = animInterpolator
-                addUpdateListener { bezierView.progress = it.animatedFraction * 2f }
-                start()
+            secondAnimationJob = scope.launch {
+                animateValue(animDuration, animInterpolator) { f ->
+                    bezierView.progress = f * 2f
+                }
             }
         }
 
@@ -255,6 +296,7 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             }
         }
         selectedId = id
+        _selectedIdFlow.value = id
     }
 
     fun isShowing(id: Int) = selectedId == id
@@ -276,11 +318,42 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     fun clearAllCounts() = models.forEach { clearCount(it.id) }
 
-    fun setOnShowListener(listener: IBottomNavigationListener) { onShowListener = listener }
+    fun setOnShowListener(listener: IBottomNavigationListener) {
+        onShowListener = listener
+    }
 
-    fun setOnClickMenuListener(listener: IBottomNavigationListener) { onClickedListener = listener }
+    fun setOnClickMenuListener(listener: IBottomNavigationListener) {
+        onClickedListener = listener
+    }
 
-    fun setOnReselectListener(listener: IBottomNavigationListener) { onReselectListener = listener }
+    fun setOnReselectListener(listener: IBottomNavigationListener) {
+        onReselectListener = listener
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        scope.cancel()
+    }
+
+    override fun onSaveInstanceState(): Parcelable {
+        val bundle = Bundle()
+        bundle.putParcelable("superState", super.onSaveInstanceState())
+        bundle.putInt("selectedId", selectedId)
+        return bundle
+    }
+
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        var superState = state
+        if (state is Bundle) {
+            selectedId = state.getInt("selectedId", -1)
+            superState = BundleCompat.getParcelable(state, "superState", Parcelable::class.java)
+        }
+        super.onRestoreInstanceState(superState)
+    }
 
     class Model(var id: Int, var icon: Int) {
         var count: String = BubbleBottomNavigationCell.EMPTY_VALUE

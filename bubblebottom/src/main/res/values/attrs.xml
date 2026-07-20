@@ -12,6 +12,10 @@
         <attr name="mbn_rippleColor" format="color" />
         <attr name="mbn_shadowColor" format="color" />
         <attr name="mbn_hasAnimation" format="boolean" />
+
+        <!-- Custom Shape Attributes -->
+        <attr name="mbn_bezierWidth" format="dimension" />
+        <attr name="mbn_bezierHeight" format="dimension" />
     </declare-styleable>
 
 </resources>

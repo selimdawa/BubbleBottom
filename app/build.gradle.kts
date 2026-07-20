@@ -10,10 +10,10 @@ android {
 
     defaultConfig {
         applicationId = "com.flatcode.bubblebottom"
-        minSdk = 23
+        minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,7 +36,6 @@ android {
 
 dependencies {
     implementation(project(":bubblebottom"))
-
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
