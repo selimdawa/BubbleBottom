@@ -252,6 +252,42 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
         }
     }
 
+    fun performFlip() {
+        iv.animate().rotationYBy(360f).setDuration(400).start()
+    }
+
+    fun performZoom() {
+        iv.animate().scaleX(1.5f).scaleY(1.5f).setDuration(200).withEndAction {
+            iv.animate().scaleX(1.1f).scaleY(1.1f).setDuration(200).start()
+        }.start()
+    }
+
+    fun performRotate() {
+        iv.animate().rotationBy(360f).setDuration(400).start()
+    }
+
+    fun performShake() {
+        iv.animate().translationX(10f).setDuration(50).withEndAction {
+            iv.animate().translationX(-10f).setDuration(50).withEndAction {
+                iv.animate().translationX(0f).setDuration(50).start()
+            }.start()
+        }.start()
+    }
+
+    fun performFade() {
+        iv.animate().alpha(0f).setDuration(200).withEndAction {
+            iv.animate().alpha(1f).setDuration(200).start()
+        }.start()
+    }
+
+    fun performTilt() {
+        iv.animate().rotation(15f).setDuration(100).withEndAction {
+            iv.animate().rotation(-15f).setDuration(200).withEndAction {
+                iv.animate().rotation(0f).setDuration(100).start()
+            }.start()
+        }.start()
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
         scope.cancel()

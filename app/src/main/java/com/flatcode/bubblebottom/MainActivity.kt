@@ -9,6 +9,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.flatcode.bubblebottom.databinding.ActivityMainBinding
 import io.selimdawa.bubblebottom.BubbleBottomNavigation
+import io.selimdawa.bubblebottom.Model
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,11 +42,11 @@ class MainActivity : AppCompatActivity() {
             Typeface.createFromAsset(assets, getString(R.string.font_source_sans_pro_regular))
 
         binding.bottomNavigation.apply {
-            add(BubbleBottomNavigation.Model(ID_HOME, R.drawable.ic_home))
-            add(BubbleBottomNavigation.Model(ID_EXPLORE, R.drawable.ic_explore))
-            add(BubbleBottomNavigation.Model(ID_MESSAGE, R.drawable.ic_message))
-            add(BubbleBottomNavigation.Model(ID_NOTIFICATION, R.drawable.ic_notification))
-            add(BubbleBottomNavigation.Model(ID_ACCOUNT, R.drawable.ic_account))
+            add(Model(ID_HOME, R.drawable.ic_home))
+            add(Model(ID_EXPLORE, R.drawable.ic_explore))
+            add(Model(ID_MESSAGE, R.drawable.ic_message))
+            add(Model(ID_NOTIFICATION, R.drawable.ic_notification))
+            add(Model(ID_ACCOUNT, R.drawable.ic_account))
             
             setCount(ID_NOTIFICATION, getString(R.string.notification_count))
 

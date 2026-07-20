@@ -9,23 +9,24 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.util.LayoutDirection
 import android.view.Gravity
+import android.view.HapticFeedbackConstants
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
-import androidx.interpolator.view.animation.FastOutSlowInInterpolator
+import androidx.lifecycle.LifecycleOwner
+import com.google.android.material.color.MaterialColors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlin.math.abs
-
-internal typealias IBottomNavigationListener = (model: BubbleBottomNavigation.Model) -> Unit
 
 class BubbleBottomNavigation @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -47,12 +48,24 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     private var isAnimating = false
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var animationJob: Job? = null
-    private var secondAnimationJob: Job? = null
+    private lateinit var animator: BubbleBottomNavigationAnimator
 
     private val _selectedIdFlow = MutableStateFlow(-1)
 
     val selectedIdFlow: StateFlow<Int> = _selectedIdFlow.asStateFlow()
+
+    var animationMode: AnimationMode = AnimationMode.MORPH
+
+    var animationDuration: Long = -1L
+
+    var isBackToHomeEnabled: Boolean = true
+    var homeId: Int = -1
+
+    var curveType: BezierView.CurveType = BezierView.CurveType.ROUND
+        set(value) {
+            field = value
+            if (allowDraw) bezierView.curveType = value
+        }
 
     var defaultIconColor = 0
         set(value) {
@@ -117,14 +130,45 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     }
 
     private fun initDefaultColors() {
-        defaultIconColor = ContextCompat.getColor(context, R.color.mbn_default_icon_color)
-        selectedIconColor = ContextCompat.getColor(context, R.color.mbn_selected_icon_color)
-        backgroundBottomColor = ContextCompat.getColor(context, R.color.mbn_background_bottom_color)
-        circleColor = ContextCompat.getColor(context, R.color.mbn_circle_color)
-        countTextColor = ContextCompat.getColor(context, R.color.mbn_count_text_color)
-        countBackgroundColor = ContextCompat.getColor(context, R.color.mbn_count_background_color)
-        rippleColor = ContextCompat.getColor(context, R.color.mbn_ripple_color)
+        defaultIconColor = resolveColorByName(
+            "colorOnSurfaceVariant", ContextCompat.getColor(context, R.color.mbn_default_icon_color)
+        )
+        selectedIconColor = resolveColorByName(
+            "colorPrimary", ContextCompat.getColor(context, R.color.mbn_selected_icon_color)
+        )
+        backgroundBottomColor = resolveColorByName(
+            "colorSurface", ContextCompat.getColor(context, R.color.mbn_background_bottom_color)
+        )
+        circleColor = resolveColorByName(
+            "colorPrimaryContainer", ContextCompat.getColor(context, R.color.mbn_circle_color)
+        )
+        countTextColor = resolveColorByName(
+            "onSecondaryContainer", ContextCompat.getColor(context, R.color.mbn_count_text_color)
+        )
+        countBackgroundColor = resolveColorByName(
+            "secondaryContainer",
+            ContextCompat.getColor(context, R.color.mbn_count_background_color)
+        )
+        rippleColor = resolveColorByName(
+            "colorControlHighlight", ContextCompat.getColor(context, R.color.mbn_ripple_color)
+        )
         shadowColor = ContextCompat.getColor(context, R.color.mbn_shadow_color)
+    }
+
+    @ColorInt
+    private fun resolveColorByName(name: String, @ColorInt fallback: Int): Int {
+        val attrId = context.resources.getIdentifier(name, "attr", context.packageName)
+        return if (attrId != 0) {
+            MaterialColors.getColor(context, attrId, fallback)
+        } else {
+            // Try with common library package names if needed, or just use appcompat default
+            val appCompatId = context.resources.getIdentifier(name, "attr", "androidx.appcompat")
+            if (appCompatId != 0) {
+                MaterialColors.getColor(context, appCompatId, fallback)
+            } else {
+                fallback
+            }
+        }
     }
 
     private fun setAttributeFromXml(context: Context, attrs: AttributeSet) {
@@ -163,6 +207,25 @@ class BubbleBottomNavigation @JvmOverloads constructor(
                     hasAnimation = getBoolean(
                         R.styleable.BubbleBottomNavigation_mbn_hasAnimation, hasAnimation
                     )
+                    isHapticFeedbackEnabled = getBoolean(
+                        R.styleable.BubbleBottomNavigation_mbn_isHapticFeedbackEnabled,
+                        isHapticFeedbackEnabled
+                    )
+                    val curveValue = getInt(R.styleable.BubbleBottomNavigation_mbn_curveType, 0)
+                    curveType = BezierView.CurveType.entries[curveValue]
+
+                    val animModeValue =
+                        getInt(R.styleable.BubbleBottomNavigation_mbn_animationMode, 1)
+                    animationMode = AnimationMode.entries[animModeValue]
+
+                    animationDuration = getInt(
+                        R.styleable.BubbleBottomNavigation_mbn_animationDuration, -1
+                    ).toLong()
+
+                    isBackToHomeEnabled = getBoolean(
+                        R.styleable.BubbleBottomNavigation_mbn_backToHomeEnabled, true
+                    )
+                    homeId = getInt(R.styleable.BubbleBottomNavigation_mbn_homeId, -1)
                 } finally {
                     recycle()
                 }
@@ -184,6 +247,8 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             color = backgroundBottomColor
             shadowColor = this@BubbleBottomNavigation.shadowColor
         }
+
+        animator = BubbleBottomNavigationAnimator(scope, bezierView, cells)
 
         addView(bezierView)
         addView(llCells)
@@ -219,6 +284,9 @@ class BubbleBottomNavigation @JvmOverloads constructor(
                 if (isShowing(model.id)) onReselectListener(model)
 
                 if (!isEnabledCell && !isAnimating) {
+                    if (isHapticFeedbackEnabled) {
+                        performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP)
+                    }
                     show(model.id, hasAnimation)
                     onClickedListener(model)
                 } else if (callListenerWhenIsSelected) {
@@ -250,37 +318,22 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     private fun anim(cell: BubbleBottomNavigationCell, id: Int, enableAnimation: Boolean = true) {
         isAnimating = true
-        animationJob?.cancel()
-        secondAnimationJob?.cancel()
-
-        val pos = getModelPosition(id)
-        val nowPos = getModelPosition(selectedId)
-        val dif = abs(pos - (if (nowPos < 0) 0 else nowPos))
-        val d = dif * 100L + 150L
-
-        val animDuration = if (enableAnimation && hasAnimation) d else 1L
-        val animInterpolator = FastOutSlowInInterpolator()
-        val beforeX = bezierView.bezierX
-
-        animationJob = scope.launch {
-            animateValue(animDuration, animInterpolator) { f ->
-                val newX = cell.x + (cell.measuredWidth / 2)
-                bezierView.bezierX = if (newX > beforeX) f * (newX - beforeX) + beforeX
-                else beforeX - f * (beforeX - newX)
-            }
-            isAnimating = false
+        animator.animate(
+            cell = cell,
+            id = id,
+            selectedId = selectedId,
+            mode = animationMode,
+            duration = animationDuration,
+            hasAnimation = enableAnimation && hasAnimation,
+            getModelPosition = ::getModelPosition
+        )
+        isAnimating = false
+        cell.isFromLeft = getModelPosition(id) > getModelPosition(selectedId)
+        cells.forEach {
+            it.duration = if (animationDuration != -1L) animationDuration else abs(
+                getModelPosition(id) - getModelPosition(selectedId)
+            ) * 100L + 150L
         }
-
-        if (abs(pos - nowPos) > 1) {
-            secondAnimationJob = scope.launch {
-                animateValue(animDuration, animInterpolator) { f ->
-                    bezierView.progress = f * 2f
-                }
-            }
-        }
-
-        cell.isFromLeft = pos > nowPos
-        cells.forEach { it.duration = d }
     }
 
     fun show(id: Int, enableAnimation: Boolean = true) {
@@ -332,6 +385,26 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        setupBackNavigation()
+    }
+
+    private fun setupBackNavigation() {
+        if (!isBackToHomeEnabled) return
+        val dispatcherOwner = context as? OnBackPressedDispatcherOwner ?: return
+        val lifecycleOwner = context as? LifecycleOwner ?: return
+
+        dispatcherOwner.onBackPressedDispatcher.addCallback(
+            lifecycleOwner, object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    val actualHomeId = if (homeId != -1) homeId else models.firstOrNull()?.id ?: -1
+                    if (selectedId != actualHomeId && actualHomeId != -1) {
+                        show(actualHomeId)
+                    } else {
+                        isEnabled = false
+                        dispatcherOwner.onBackPressedDispatcher.onBackPressed()
+                    }
+                }
+            })
     }
 
     override fun onDetachedFromWindow() {
@@ -353,9 +426,5 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             superState = BundleCompat.getParcelable(state, "superState", Parcelable::class.java)
         }
         super.onRestoreInstanceState(superState)
-    }
-
-    class Model(var id: Int, var icon: Int) {
-        var count: String = BubbleBottomNavigationCell.EMPTY_VALUE
     }
 }

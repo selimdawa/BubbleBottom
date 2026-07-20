@@ -133,10 +133,26 @@ bubbleBottom.selectedColor = Color.BLUE
 bubbleBottom.backgroundColor = Color.WHITE
 ```
 
+### Change animation mode
+
+```kotlin
+// 20 Options available (e.g., SLIDE, MORPH, BOUNCE, DROP, JUMP, FLIP, ZOOM, ROTATE, SHAKE, ...)
+bubbleBottom.animationMode = AnimationMode.BOUNCE
+```
+
 ### Change animation duration
 
 ```kotlin
-bubbleBottom.animationDuration = 300L
+bubbleBottom.animationDuration = 300L // Set to -1 for auto-calculate
+```
+
+### Back to Home Behavior
+
+By default, pressing the system back button will navigate to the first tab (Home) before closing the app.
+
+```kotlin
+bubbleBottom.isBackToHomeEnabled = true // Default is true
+bubbleBottom.homeId = 1 // Specify which ID is your Home tab
 ```
 
 ---
@@ -146,20 +162,51 @@ bubbleBottom.animationDuration = 300L
 Example:
 
 ```xml
-<com.selimdawa.bubblebottom.BubbleBottom
+<com.selimdawa.bubblebottom.BubbleBottomNavigation
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    app:mbn_animationMode="bounce"
+    app:mbn_animationDuration="400"
+    app:mbn_backToHomeEnabled="true"
+    app:mbn_homeId="1"
     app:selectedColor="@color/purple"
     app:backgroundColor="@color/white"/>
 ```
 
 ---
 
+## 🎭 Animation Modes (20 Total)
+
+| Mode         | Description                                    |
+|:-------------|:-----------------------------------------------|
+| `slide`      | Classic smooth movement.                       |
+| `morph`      | Smart jump with disappear/reappear effect.     |
+| `bounce`     | Fun movement with overshoot.                   |
+| `drop`       | Bubble falls from the top into place.          |
+| `jump`       | High-arcing jump animation.                    |
+| `flip`       | Icon performs a 360 flip.                      |
+| `zoom`       | Icon pops out and settles.                     |
+| `rotate`     | Icon spins once.                               |
+| `shake`      | Attention-grabbing horizontal shake.           |
+| `anticipate` | Winds up backwards before snapping forward.    |
+| `elastic`    | Rubbery, over-oscillating movement.            |
+| `fade`       | Cross-fades during transition.                 |
+| `squash`     | Flattens while moving, expands at destination. |
+| `wave`       | Curve wobbles like a wave.                     |
+| `pulse`      | Continuous soft pulse on select.               |
+| `fling`      | High velocity start with smooth stop.          |
+| `spin_move`  | Icon spins while moving.                       |
+| `glow`       | Soft pulse glow on the circle.                 |
+| `jelly`      | Wobbly width transition.                       |
+| `tilt`       | 3D-like tilt effect on the icon.               |
+
+---
+
 ## 📱 Requirements
 
 | Requirement | Version   |
-| ----------- | --------- |
-| Android     | API 23+   |
+|-------------|-----------|
+| Android     | API 24+   |
 | Kotlin      | Supported |
 | Gradle      | 8+        |
 

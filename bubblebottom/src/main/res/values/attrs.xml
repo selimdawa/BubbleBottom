@@ -12,7 +12,40 @@
         <attr name="mbn_rippleColor" format="color" />
         <attr name="mbn_shadowColor" format="color" />
         <attr name="mbn_hasAnimation" format="boolean" />
+        <attr name="mbn_isHapticFeedbackEnabled" format="boolean" />
 
+        <attr name="mbn_curveType" format="enum">
+            <enum name="round" value="0" />
+            <enum name="sharp" value="1" />
+            <enum name="square" value="2" />
+
+        </attr>
+        <attr name="mbn_animationMode" format="enum">
+            <enum name="slide" value="0" />
+            <enum name="morph" value="1" />
+            <enum name="bounce" value="2" />
+            <enum name="drop" value="3" />
+            <enum name="jump" value="4" />
+            <enum name="flip" value="5" />
+            <enum name="zoom" value="6" />
+            <enum name="rotate" value="7" />
+            <enum name="shake" value="8" />
+            <enum name="anticipate" value="9" />
+            <enum name="elastic" value="10" />
+            <enum name="fade" value="11" />
+            <enum name="squash" value="12" />
+            <enum name="wave" value="13" />
+            <enum name="pulse" value="14" />
+            <enum name="fling" value="15" />
+            <enum name="spin_move" value="16" />
+            <enum name="glow" value="17" />
+            <enum name="jelly" value="18" />
+            <enum name="tilt" value="19" />
+        </attr>
+
+        <attr name="mbn_animationDuration" format="integer" />
+        <attr name="mbn_backToHomeEnabled" format="boolean" />
+        <attr name="mbn_homeId" format="integer" />
         <!-- Custom Shape Attributes -->
         <attr name="mbn_bezierWidth" format="dimension" />
         <attr name="mbn_bezierHeight" format="dimension" />
