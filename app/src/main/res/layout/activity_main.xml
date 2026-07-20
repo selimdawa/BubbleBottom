@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/main"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@color/white">
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/fragment_selected"
@@ -15,7 +14,6 @@
         android:gravity="center"
         android:padding="10dp"
         android:text="@string/app_name"
-        android:textColor="@color/black"
         android:textSize="21sp"
         android:textStyle="bold" />
 
@@ -24,12 +22,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
+        app:mbn_countTypeface="@string/font_source_sans_pro_semibold"
+        app:mbn_hasAnimation="true" />
+
+        <!--
         app:mbn_backgroundBottomColor="@color/white"
         app:mbn_circleColor="@color/white"
         app:mbn_countBackgroundColor="@color/orange"
         app:mbn_countTextColor="@color/white"
-        app:mbn_countTypeface="@string/font_source_sans_pro_semibold"
         app:mbn_defaultIconColor="@color/blue"
-        app:mbn_hasAnimation="true" />
+        -->
 
 </RelativeLayout>

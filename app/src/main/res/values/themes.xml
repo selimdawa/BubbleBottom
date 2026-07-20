@@ -1,7 +1,12 @@
 <resources>
     <!-- Base application theme. -->
     <style name="Base.Theme.MainApp" parent="Theme.Material3.DayNight.NoActionBar">
-
+        <item name="android:statusBarColor">@color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/basic_2</item>
+        <item name="colorAccent">@color/basic_2</item>
     </style>
 
     <style name="Theme.MainApp" parent="Base.Theme.MainApp" />

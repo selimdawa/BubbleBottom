@@ -1,7 +1,0 @@
-- [x] Remove test dependencies from `app/build.gradle.kts`
-- [x] Remove test dependencies from `bubblebottom/build.gradle.kts`
-- [x] Refactor `BubbleBottomNavigation.kt` (Use `@JvmOverloads`, idiomatic Kotlin)
-- [x] Refactor `BubbleBottomNavigationCell.kt` (Idiomatic Kotlin)
-- [x] Refactor `Utils.kt` (Idiomatic Kotlin)
-- [x] Refactor `MainActivity.kt` (Idiomatic Kotlin)
-- [x] Verify build and functionality
