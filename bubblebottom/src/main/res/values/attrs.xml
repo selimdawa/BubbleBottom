@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <declare-styleable name="MeowBottomNavigation">
+    <declare-styleable name="BubbleBottomNavigation">
         <attr name="mbn_defaultIconColor" format="color" />
         <attr name="mbn_selectedIconColor" format="color" />
         <attr name="mbn_backgroundBottomColor" format="color" />

@@ -10,9 +10,7 @@ import android.util.AttributeSet
 import android.view.View
 
 class BezierView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttrs: Int = 0
+    context: Context, attrs: AttributeSet? = null, defStyleAttrs: Int = 0
 ) : View(context, attrs, defStyleAttrs) {
 
     private var mainPaint: Paint? = null
@@ -46,16 +44,14 @@ class BezierView @JvmOverloads constructor(
 
     var bezierX = 0f
         set(value) {
-            if (value == field)
-                return
+            if (value == field) return
             field = value
             invalidate()
         }
 
     var progress = 0f
         set(value) {
-            if (value == field)
-                return
+            if (value == field) return
             field = value
 
             progressArray[1].x = bezierX - bezierInnerWidth / 2
@@ -72,8 +68,7 @@ class BezierView @JvmOverloads constructor(
                     progressArray[i].y = calculate(outerArray[i].y, innerArray[i].y)
                 }
             }
-            if (field == 2f)
-                field = 0f
+            if (field == 2f) field = 0f
 
             invalidate()
         }
@@ -225,10 +220,8 @@ class BezierView @JvmOverloads constructor(
 
     private fun calculate(start: Float, end: Float): Float {
         var p = progress
-        if (p > 1f)
-            p = progress - 1f
-        if (p in 0.9f..1f)
-            calculateInner()
+        if (p > 1f) p = progress - 1f
+        if (p in 0.9f..1f) calculateInner()
         return (p * (end - start)) + start
     }
 }

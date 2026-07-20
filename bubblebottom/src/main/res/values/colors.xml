@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="mbn_default_icon_color">#757575</color>
+    <color name="mbn_selected_icon_color">#2196f3</color>
+    <color name="mbn_background_bottom_color">#ffffff</color>
+    <color name="mbn_circle_color">#ffffff</color>
+    <color name="mbn_count_text_color">#ffffff</color>
+    <color name="mbn_count_background_color">#ff0000</color>
+    <color name="mbn_ripple_color">#757575</color>
+    <color name="mbn_shadow_color">#ffbbbbbb</color>
+</resources>

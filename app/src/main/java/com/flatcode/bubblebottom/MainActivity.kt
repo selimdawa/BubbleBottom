@@ -38,7 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupUI() {
         binding.fragmentSelected.typeface =
-            Typeface.createFromAsset(assets, "fonts/SourceSansPro-Regular.ttf")
+            Typeface.createFromAsset(assets, getString(R.string.font_source_sans_pro_regular))
 
         binding.bottomNavigation.apply {
             add(BubbleBottomNavigation.Model(ID_HOME, R.drawable.ic_home))
@@ -47,22 +47,19 @@ class MainActivity : AppCompatActivity() {
             add(BubbleBottomNavigation.Model(ID_NOTIFICATION, R.drawable.ic_notification))
             add(BubbleBottomNavigation.Model(ID_ACCOUNT, R.drawable.ic_account))
             
-            setCount(
-                ID_NOTIFICATION, "115"
-            )
+            setCount(ID_NOTIFICATION, getString(R.string.notification_count))
 
             setOnShowListener { model ->
-                val name = getMenuName(model.id)
-                binding.fragmentSelected.text = getString(R.string.main_page_selected, name)
+                binding.fragmentSelected.text = getString(R.string.main_page_selected, getMenuName(model.id))
             }
 
-            setOnClickMenuListener { model ->
-                val name = getMenuName(model.id)
+            setOnClickMenuListener { _ ->
+                // Handle menu click if needed
             }
 
             setOnReselectListener { model ->
                 Toast.makeText(
-                    this@MainActivity, "Item ${model.id} is reselected.", Toast.LENGTH_LONG
+                    this@MainActivity, getString(R.string.reselected_message, model.id), Toast.LENGTH_LONG
                 ).show()
             }
 
@@ -71,13 +68,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getMenuName(id: Int): String {
-        return when (id) {
-            ID_HOME -> "HOME"
-            ID_EXPLORE -> "EXPLORE"
-            ID_MESSAGE -> "MESSAGE"
-            ID_NOTIFICATION -> "NOTIFICATION"
-            ID_ACCOUNT -> "ACCOUNT"
-            else -> ""
+        val resId = when (id) {
+            ID_HOME -> R.string.menu_home
+            ID_EXPLORE -> R.string.menu_explore
+            ID_MESSAGE -> R.string.menu_message
+            ID_NOTIFICATION -> R.string.menu_notification
+            ID_ACCOUNT -> R.string.menu_account
+            else -> return ""
         }
+        return getString(resId)
     }
 }

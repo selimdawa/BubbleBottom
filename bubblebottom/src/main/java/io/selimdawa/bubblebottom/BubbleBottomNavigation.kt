@@ -10,14 +10,18 @@ import android.util.LayoutDirection
 import android.view.Gravity
 import android.widget.FrameLayout
 import android.widget.LinearLayout
-import androidx.core.graphics.toColorInt
+import androidx.core.content.ContextCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import kotlin.math.abs
 
 internal typealias IBottomNavigationListener = (model: BubbleBottomNavigation.Model) -> Unit
 
 @Suppress("MemberVisibilityCanBePrivate")
-class BubbleBottomNavigation : FrameLayout {
+class BubbleBottomNavigation @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : FrameLayout(context, attrs, defStyleAttr) {
 
     var models = ArrayList<Model>()
     var cells = ArrayList<BubbleBottomNavigationCell>()
@@ -30,36 +34,36 @@ class BubbleBottomNavigation : FrameLayout {
     private var onShowListener: IBottomNavigationListener = {}
     private var onReselectListener: IBottomNavigationListener = {}
 
-    private var heightCell = 0
+    private var heightCell = 96.dp(context)
     private var isAnimating = false
 
-    var defaultIconColor = "#757575".toColorInt()
+    var defaultIconColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
-    var selectedIconColor = "#2196f3".toColorInt()
+    var selectedIconColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
-    var backgroundBottomColor = "#ffffff".toColorInt()
+    var backgroundBottomColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
-    var circleColor = "#ffffff".toColorInt()
+    var circleColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
-    private var shadowColor = -0x454546
-    var countTextColor = "#ffffff".toColorInt()
+    private var shadowColor = 0
+    var countTextColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
         }
-    var countBackgroundColor = "#ff0000".toColorInt()
+    var countBackgroundColor = 0
         set(value) {
             field = value
             updateAllIfAllowDraw()
@@ -74,114 +78,90 @@ class BubbleBottomNavigation : FrameLayout {
             field = value
             updateAllIfAllowDraw()
         }
-    private var rippleColor = "#757575".toColorInt()
+    private var rippleColor = 0
 
     private var allowDraw = false
 
-    @Suppress("PrivatePropertyName")
-    private lateinit var ll_cells: LinearLayout
+    private lateinit var llCells: LinearLayout
     private lateinit var bezierView: BezierView
 
     init {
-        heightCell = 96.dp(context)
-    }
-
-    constructor(context: Context) : super(context) {
+        initDefaultColors()
+        attrs?.let { setAttributeFromXml(context, it) }
         initializeViews()
     }
 
-    constructor(context: Context, attrs: AttributeSet) : super(context, attrs) {
-        setAttributeFromXml(context, attrs)
-        initializeViews()
-    }
-
-    constructor(context: Context, attrs: AttributeSet, defStyleAttr: Int) : super(
-        context, attrs, defStyleAttr
-    ) {
-        setAttributeFromXml(context, attrs)
-        initializeViews()
+    private fun initDefaultColors() {
+        defaultIconColor = ContextCompat.getColor(context, R.color.mbn_default_icon_color)
+        selectedIconColor = ContextCompat.getColor(context, R.color.mbn_selected_icon_color)
+        backgroundBottomColor = ContextCompat.getColor(context, R.color.mbn_background_bottom_color)
+        circleColor = ContextCompat.getColor(context, R.color.mbn_circle_color)
+        countTextColor = ContextCompat.getColor(context, R.color.mbn_count_text_color)
+        countBackgroundColor = ContextCompat.getColor(context, R.color.mbn_count_background_color)
+        rippleColor = ContextCompat.getColor(context, R.color.mbn_ripple_color)
+        shadowColor = ContextCompat.getColor(context, R.color.mbn_shadow_color)
     }
 
     private fun setAttributeFromXml(context: Context, attrs: AttributeSet) {
-        val a = context.theme.obtainStyledAttributes(
-            attrs, R.styleable.MeowBottomNavigation, 0, 0
-        )
-        try {
-            a.apply {
-                defaultIconColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_defaultIconColor, defaultIconColor
-                )
-                selectedIconColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_selectedIconColor, selectedIconColor
-                )
-                backgroundBottomColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_backgroundBottomColor,
-                    backgroundBottomColor
-                )
-                circleColor =
-                    getColor(R.styleable.MeowBottomNavigation_mbn_circleColor, circleColor)
-                countTextColor =
-                    getColor(R.styleable.MeowBottomNavigation_mbn_countTextColor, countTextColor)
-                countBackgroundColor = getColor(
-                    R.styleable.MeowBottomNavigation_mbn_countBackgroundColor, countBackgroundColor
-                )
-                rippleColor =
-                    getColor(R.styleable.MeowBottomNavigation_mbn_rippleColor, rippleColor)
-                shadowColor =
-                    getColor(R.styleable.MeowBottomNavigation_mbn_shadowColor, shadowColor)
+        context.theme.obtainStyledAttributes(attrs, R.styleable.BubbleBottomNavigation, 0, 0).apply {
+            try {
+                defaultIconColor = getColor(R.styleable.BubbleBottomNavigation_mbn_defaultIconColor, defaultIconColor)
+                selectedIconColor = getColor(R.styleable.BubbleBottomNavigation_mbn_selectedIconColor, selectedIconColor)
+                backgroundBottomColor = getColor(R.styleable.BubbleBottomNavigation_mbn_backgroundBottomColor, backgroundBottomColor)
+                circleColor = getColor(R.styleable.BubbleBottomNavigation_mbn_circleColor, circleColor)
+                countTextColor = getColor(R.styleable.BubbleBottomNavigation_mbn_countTextColor, countTextColor)
+                countBackgroundColor = getColor(R.styleable.BubbleBottomNavigation_mbn_countBackgroundColor, countBackgroundColor)
+                rippleColor = getColor(R.styleable.BubbleBottomNavigation_mbn_rippleColor, rippleColor)
+                shadowColor = getColor(R.styleable.BubbleBottomNavigation_mbn_shadowColor, shadowColor)
 
-                val typeface = getString(R.styleable.MeowBottomNavigation_mbn_countTypeface)
-                if (!typeface.isNullOrEmpty()) countTypeface =
-                    Typeface.createFromAsset(context.assets, typeface)
+                getString(R.styleable.BubbleBottomNavigation_mbn_countTypeface)?.let {
+                    if (it.isNotEmpty()) countTypeface = Typeface.createFromAsset(context.assets, it)
+                }
 
-                hasAnimation =
-                    getBoolean(R.styleable.MeowBottomNavigation_mbn_hasAnimation, hasAnimation)
+                hasAnimation = getBoolean(R.styleable.BubbleBottomNavigation_mbn_hasAnimation, hasAnimation)
+            } finally {
+                recycle()
             }
-        } finally {
-            a.recycle()
         }
     }
 
     private fun initializeViews() {
-        ll_cells = LinearLayout(context)
-        ll_cells.apply {
-            val params = LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, heightCell)
-            params.gravity = Gravity.BOTTOM
-            layoutParams = params
+        llCells = LinearLayout(context).apply {
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, heightCell).apply {
+                gravity = Gravity.BOTTOM
+            }
             orientation = LinearLayout.HORIZONTAL
             clipChildren = false
             clipToPadding = false
         }
 
-        bezierView = BezierView(context)
-        bezierView.apply {
-            layoutParams = LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, heightCell)
+        bezierView = BezierView(context).apply {
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, heightCell)
             color = backgroundBottomColor
             shadowColor = this@BubbleBottomNavigation.shadowColor
         }
 
         addView(bezierView)
-        addView(ll_cells)
+        addView(llCells)
         allowDraw = true
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         if (selectedId == -1) {
-            bezierView.bezierX = if (layoutDirection == LayoutDirection.RTL) measuredWidth + 72f.dp(
-                context
-            ) else (-72f).dp(context)
-        }
-        if (selectedId != -1) {
+            bezierView.bezierX = if (layoutDirection == LayoutDirection.RTL) {
+                measuredWidth + 72f.dp(context)
+            } else {
+                (-72f).dp(context)
+            }
+        } else {
             show(selectedId, false)
         }
     }
 
     fun add(model: Model) {
-        val cell = BubbleBottomNavigationCell(context)
-        cell.apply {
-            val params = LinearLayout.LayoutParams(0, heightCell, 1f)
-            layoutParams = params
+        val cell = BubbleBottomNavigationCell(context).apply {
+            layoutParams = LinearLayout.LayoutParams(0, heightCell, 1f)
             icon = model.icon
             count = model.count
             defaultIconColor = this@BubbleBottomNavigation.defaultIconColor
@@ -194,17 +174,17 @@ class BubbleBottomNavigation : FrameLayout {
             onClickListener = {
                 if (isShowing(model.id)) onReselectListener(model)
 
-                if (!cell.isEnabledCell && !isAnimating) {
+                if (!isEnabledCell && !isAnimating) {
                     show(model.id, hasAnimation)
                     onClickedListener(model)
-                } else {
-                    if (callListenerWhenIsSelected) onClickedListener(model)
+                } else if (callListenerWhenIsSelected) {
+                    onClickedListener(model)
                 }
             }
             disableCell(hasAnimation)
-            ll_cells.addView(this)
         }
 
+        llCells.addView(cell)
         cells.add(cell)
         models.add(model)
     }
@@ -229,50 +209,41 @@ class BubbleBottomNavigation : FrameLayout {
 
         val pos = getModelPosition(id)
         val nowPos = getModelPosition(selectedId)
-
-        val nPos = if (nowPos < 0) 0 else nowPos
-        val dif = abs(pos - nPos)
-        val d = (dif) * 100L + 150L
+        val dif = abs(pos - (if (nowPos < 0) 0 else nowPos))
+        val d = dif * 100L + 150L
 
         val animDuration = if (enableAnimation && hasAnimation) d else 1L
         val animInterpolator = FastOutSlowInInterpolator()
 
-        val anim = ValueAnimator.ofFloat(0f, 1f)
-        anim.apply {
+        ValueAnimator.ofFloat(0f, 1f).apply {
             duration = animDuration
             interpolator = animInterpolator
             val beforeX = bezierView.bezierX
             addUpdateListener {
                 val f = it.animatedFraction
                 val newX = cell.x + (cell.measuredWidth / 2)
-                if (newX > beforeX) bezierView.bezierX = f * (newX - beforeX) + beforeX
-                else bezierView.bezierX = beforeX - f * (beforeX - newX)
+                bezierView.bezierX = if (newX > beforeX) f * (newX - beforeX) + beforeX
+                else beforeX - f * (beforeX - newX)
                 if (f == 1f) isAnimating = false
             }
             start()
         }
 
         if (abs(pos - nowPos) > 1) {
-            val progressAnim = ValueAnimator.ofFloat(0f, 1f)
-            progressAnim.apply {
+            ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = animDuration
                 interpolator = animInterpolator
-                addUpdateListener {
-                    val f = it.animatedFraction
-                    bezierView.progress = f * 2f
-                }
+                addUpdateListener { bezierView.progress = it.animatedFraction * 2f }
                 start()
             }
         }
 
         cell.isFromLeft = pos > nowPos
-        cells.forEach {
-            it.duration = d
-        }
+        cells.forEach { it.duration = d }
     }
 
     fun show(id: Int, enableAnimation: Boolean = true) {
-        for (i in models.indices) {
+        models.indices.forEach { i ->
             val model = models[i]
             val cell = cells[i]
             if (model.id == id) {
@@ -286,60 +257,30 @@ class BubbleBottomNavigation : FrameLayout {
         selectedId = id
     }
 
-    fun isShowing(id: Int): Boolean {
-        return selectedId == id
-    }
+    fun isShowing(id: Int) = selectedId == id
 
-    fun getModelById(id: Int): Model? {
-        models.forEach {
-            if (it.id == id) return it
-        }
-        return null
-    }
+    fun getModelById(id: Int) = models.find { it.id == id }
 
-    fun getCellById(id: Int): BubbleBottomNavigationCell {
-        return cells[getModelPosition(id)]
-    }
+    fun getCellById(id: Int) = cells[getModelPosition(id)]
 
-    fun getModelPosition(id: Int): Int {
-        for (i in models.indices) {
-            val item = models[i]
-            if (item.id == id) return i
-        }
-        return -1
-    }
+    fun getModelPosition(id: Int) = models.indexOfFirst { it.id == id }
 
     fun setCount(id: Int, count: String) {
-        val model = getModelById(id) ?: return
         val pos = getModelPosition(id)
-        model.count = count
+        if (pos == -1) return
+        models[pos].count = count
         cells[pos].count = count
     }
 
-    fun clearCount(id: Int) {
-        val model = getModelById(id) ?: return
-        val pos = getModelPosition(id)
-        model.count = BubbleBottomNavigationCell.EMPTY_VALUE
-        cells[pos].count = BubbleBottomNavigationCell.EMPTY_VALUE
-    }
+    fun clearCount(id: Int) = setCount(id, BubbleBottomNavigationCell.EMPTY_VALUE)
 
-    fun clearAllCounts() {
-        models.forEach {
-            clearCount(it.id)
-        }
-    }
+    fun clearAllCounts() = models.forEach { clearCount(it.id) }
 
-    fun setOnShowListener(listener: IBottomNavigationListener) {
-        onShowListener = listener
-    }
+    fun setOnShowListener(listener: IBottomNavigationListener) { onShowListener = listener }
 
-    fun setOnClickMenuListener(listener: IBottomNavigationListener) {
-        onClickedListener = listener
-    }
+    fun setOnClickMenuListener(listener: IBottomNavigationListener) { onClickedListener = listener }
 
-    fun setOnReselectListener(listener: IBottomNavigationListener) {
-        onReselectListener = listener
-    }
+    fun setOnReselectListener(listener: IBottomNavigationListener) { onReselectListener = listener }
 
     class Model(var id: Int, var icon: Int) {
         var count: String = BubbleBottomNavigationCell.EMPTY_VALUE

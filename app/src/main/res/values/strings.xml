@@ -3,4 +3,15 @@
 
     <string name="main_page_selected">%s page is selected</string>
 
+    <string name="font_source_sans_pro_regular">fonts/SourceSansPro-Regular.ttf</string>
+    <string name="font_source_sans_pro_semibold">fonts/SourceSansPro-SemiBold.ttf</string>
+
+    <string name="menu_home">HOME</string>
+    <string name="menu_explore">EXPLORE</string>
+    <string name="menu_message">MESSAGE</string>
+    <string name="menu_notification">NOTIFICATION</string>
+    <string name="menu_account">ACCOUNT</string>
+    <string name="reselected_message">Item %d is reselected.</string>
+    <string name="notification_count">115</string>
+
 </resources>

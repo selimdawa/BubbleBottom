@@ -18,17 +18,11 @@ import io.selimdawa.bubblebottom.databinding.BubbleBottomCellBinding
 
 @Suppress("unused")
 class BubbleBottomNavigationCell @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttrs: Int = 0
+    context: Context, attrs: AttributeSet? = null, defStyleAttrs: Int = 0
 ) : RelativeLayout(context, attrs, defStyleAttrs) {
 
-    private val binding: BubbleBottomCellBinding
-
-    init {
-        LayoutInflater.from(context).inflate(R.layout.bubble_bottom_cell, this, true)
-        binding = BubbleBottomCellBinding.bind(this)
-    }
+    private val binding: BubbleBottomCellBinding =
+        BubbleBottomCellBinding.inflate(LayoutInflater.from(context), this)
 
     companion object {
         const val EMPTY_VALUE = "empty"
@@ -37,52 +31,41 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     var defaultIconColor = 0
         set(value) {
             field = value
-            if (allowDraw)
-                ImageViewCompat.setImageTintList(
-                    binding.iv,
-                    ofColorStateList(if (!isEnabledCell) defaultIconColor else selectedIconColor)
-                )
+            updateIconTint()
         }
     var selectedIconColor = 0
         set(value) {
             field = value
-            if (allowDraw)
-                ImageViewCompat.setImageTintList(
-                    binding.iv,
-                    ofColorStateList(if (!isEnabledCell) defaultIconColor else selectedIconColor)
-                )
+            updateIconTint()
         }
     var circleColor = 0
         set(value) {
             field = value
-            if (allowDraw)
-                isEnabledCell = isEnabledCell
+            if (allowDraw) isEnabledCell = isEnabledCell
         }
 
     var icon = 0
         set(value) {
             field = value
-            if (allowDraw)
-                binding.iv.setImageResource(value)
+            if (allowDraw) binding.iv.setImageResource(value)
         }
 
-    var count: String? =
-        EMPTY_VALUE
+    var count: String? = EMPTY_VALUE
         set(value) {
             field = value
-            if (allowDraw) {
-                if (count != null && count == EMPTY_VALUE) {
-                    binding.tvCount.text = ""
-                    binding.tvCount.visibility = INVISIBLE
-                } else {
-                    if (count != null && (count?.length ?: 0) >= 3) {
-                        field = count?.substring(0, 1) + ".."
-                    }
-                    binding.tvCount.text = count
-                    binding.tvCount.visibility = VISIBLE
-                    val scale = if (count?.isEmpty() == true) 0.5f else 1f
-                    binding.tvCount.scaleX = scale
-                    binding.tvCount.scaleY = scale
+            if (!allowDraw) return
+            
+            if (value == EMPTY_VALUE) {
+                binding.tvCount.text = ""
+                binding.tvCount.visibility = INVISIBLE
+            } else {
+                val displayCount = if ((value?.length ?: 0) >= 3) value?.substring(0, 1) + ".." else value
+                binding.tvCount.apply {
+                    text = displayCount
+                    visibility = VISIBLE
+                    val scale = if (displayCount.isNullOrEmpty()) 0.5f else 1f
+                    scaleX = scale
+                    scaleY = scale
                 }
             }
         }
@@ -103,34 +86,30 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     var countTextColor = 0
         set(value) {
             field = value
-            if (allowDraw)
-                binding.tvCount.setTextColor(field)
+            if (allowDraw) binding.tvCount.setTextColor(field)
         }
 
     var countBackgroundColor = 0
         set(value) {
             field = value
             if (allowDraw) {
-                val d = GradientDrawable()
-                d.setColor(field)
-                d.shape = GradientDrawable.OVAL
-                binding.tvCount.background = d
+                binding.tvCount.background = GradientDrawable().apply {
+                    setColor(field)
+                    shape = GradientDrawable.OVAL
+                }
             }
         }
 
     var countTypeface: Typeface? = null
         set(value) {
             field = value
-            if (allowDraw && field != null)
-                binding.tvCount.typeface = field
+            if (allowDraw && field != null) binding.tvCount.typeface = field
         }
 
     var rippleColor = 0
         set(value) {
             field = value
-            if (allowDraw) {
-                isEnabledCell = isEnabledCell
-            }
+            if (allowDraw) isEnabledCell = isEnabledCell
         }
 
     var isFromLeft = false
@@ -138,43 +117,41 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     private var progress = 0f
         set(value) {
             field = value
-            binding.fl.y = (1f - progress) * 18f.dp(context) - 3f.dp(context)
+            if (!allowDraw) return
 
-            ImageViewCompat.setImageTintList(
-                binding.iv,
-                ofColorStateList(if (progress == 1f) selectedIconColor else defaultIconColor)
-            )
-            val scale = (1f - progress) * (-0.2f) + 1f
+            binding.fl.y = (1f - progress) * 18f.dp(context) - 3f.dp(context)
+            updateIconTint()
+            
+            val scale = (1f - progress) * (-0.1f) + 1.1f
             binding.iv.scaleX = scale
             binding.iv.scaleY = scale
 
-            val d = GradientDrawable()
-            d.setColor(circleColor)
-            d.shape = GradientDrawable.OVAL
+            binding.vCircle.background = GradientDrawable().apply {
+                setColor(circleColor)
+                shape = GradientDrawable.OVAL
+            }
 
-            binding.vCircle.background = d
-
-            ViewCompat.setElevation(
-                binding.vCircle, if (progress > 0.7f) (progress * 4f).dp(context) else 0f
-            )
+            ViewCompat.setElevation(binding.vCircle, if (progress > 0.7f) (progress * 4f).dp(context) else 0f)
 
             val m = 24.dp(context)
-            binding.vCircle.x =
-                (1f - progress) * (if (isFromLeft) -m else m) + ((measuredWidth - 48f.dp(context)) / 2f)
+            binding.vCircle.x = (1f - progress) * (if (isFromLeft) -m else m) + ((measuredWidth - 48f.dp(context)) / 2f)
             binding.vCircle.y = (1f - progress) * measuredHeight + 6.dp(context)
         }
 
     var isEnabledCell = false
         set(value) {
             field = value
-            val d = GradientDrawable()
-            d.setColor(circleColor)
-            d.shape = GradientDrawable.OVAL
-            if (!isEnabledCell) {
+            if (!allowDraw) return
+
+            val d = GradientDrawable().apply {
+                setColor(circleColor)
+                shape = GradientDrawable.OVAL
+            }
+            if (!value) {
                 binding.fl.background = RippleDrawable(ColorStateList.valueOf(rippleColor), null, d)
             } else {
                 binding.fl.runAfterDelay(200) {
-                    binding.fl.setBackgroundColor(Color.TRANSPARENT)
+                    setBackgroundColor(Color.TRANSPARENT)
                 }
             }
         }
@@ -182,9 +159,7 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     var onClickListener: () -> Unit = {}
         set(value) {
             field = value
-            binding.iv.setOnClickListener {
-                onClickListener()
-            }
+            binding.iv.setOnClickListener { value() }
         }
 
     private var allowDraw = false
@@ -195,9 +170,7 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     }
 
     private fun draw() {
-        if (!allowDraw)
-            return
-
+        if (!allowDraw) return
         icon = icon
         count = count
         iconSize = iconSize
@@ -208,36 +181,39 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
         onClickListener = onClickListener
     }
 
+    private fun updateIconTint() {
+        if (allowDraw) {
+            ImageViewCompat.setImageTintList(
+                binding.iv,
+                ofColorStateList(if (progress == 1f || isEnabledCell) selectedIconColor else defaultIconColor)
+            )
+        }
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         progress = progress
     }
 
     fun disableCell(isAnimate: Boolean = true) {
-        if (isEnabledCell)
-            animateProgress(false, isAnimate)
+        if (isEnabledCell) animateProgress(false, isAnimate)
         isEnabledCell = false
     }
 
     fun enableCell(isAnimate: Boolean = true) {
-        if (!isEnabledCell)
-            animateProgress(true, isAnimate)
+        if (!isEnabledCell) animateProgress(true, isAnimate)
         isEnabledCell = true
     }
 
     private fun animateProgress(enableCell: Boolean, isAnimate: Boolean = true) {
         val d = if (enableCell) duration else 250
-        val anim = ValueAnimator.ofFloat(0f, 1f)
-        anim.apply {
+        ValueAnimator.ofFloat(0f, 1f).apply {
             startDelay = if (enableCell) d / 4 else 0L
             duration = if (isAnimate) d else 1L
             interpolator = FastOutSlowInInterpolator()
             addUpdateListener {
                 val f = it.animatedFraction
-                progress = if (enableCell)
-                    f
-                else
-                    1f - f
+                progress = if (enableCell) f else 1f - f
             }
             start()
         }

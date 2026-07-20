@@ -28,7 +28,7 @@
         app:mbn_circleColor="@color/white"
         app:mbn_countBackgroundColor="@color/orange"
         app:mbn_countTextColor="@color/white"
-        app:mbn_countTypeface="fonts/SourceSansPro-SemiBold.ttf"
+        app:mbn_countTypeface="@string/font_source_sans_pro_semibold"
         app:mbn_defaultIconColor="@color/blue"
         app:mbn_hasAnimation="true" />
 
