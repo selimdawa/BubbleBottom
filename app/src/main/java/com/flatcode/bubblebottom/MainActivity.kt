@@ -1,6 +1,5 @@
 package com.flatcode.bubblebottom
 
-import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
@@ -8,7 +7,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.flatcode.bubblebottom.databinding.ActivityMainBinding
-import io.selimdawa.bubblebottom.BubbleBottomNavigation
 import io.selimdawa.bubblebottom.Model
 
 class MainActivity : AppCompatActivity() {
@@ -25,46 +23,63 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        setContentView(binding.root)
+        try {
+            enableEdgeToEdge()
+            setContentView(binding.root)
 
-        ViewCompat.setOnApplyWindowInsetsListener(binding.main) { view, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+            ViewCompat.setOnApplyWindowInsetsListener(binding.main) { view, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                view.setPadding(
+                    systemBars.left, systemBars.top, systemBars.right, systemBars.bottom
+                )
+                insets
+            }
+
+            setupUI()
+        } catch (e: Exception) {
+            Toast.makeText(this, "CRASH: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
         }
-
-        setupUI()
     }
 
     private fun setupUI() {
-        binding.fragmentSelected.typeface =
-            Typeface.createFromAsset(assets, getString(R.string.font_source_sans_pro_regular))
+        try {
+            binding.bottomNavigation.apply {
+                add(Model(ID_HOME, R.drawable.ic_home))
+                add(Model(ID_EXPLORE, R.drawable.ic_explore))
+                add(Model(ID_MESSAGE, R.drawable.ic_message))
+                add(Model(ID_NOTIFICATION, R.drawable.ic_notification))
+                add(Model(ID_ACCOUNT, R.drawable.ic_account))
 
-        binding.bottomNavigation.apply {
-            add(Model(ID_HOME, R.drawable.ic_home))
-            add(Model(ID_EXPLORE, R.drawable.ic_explore))
-            add(Model(ID_MESSAGE, R.drawable.ic_message))
-            add(Model(ID_NOTIFICATION, R.drawable.ic_notification))
-            add(Model(ID_ACCOUNT, R.drawable.ic_account))
-            
-            setCount(ID_NOTIFICATION, getString(R.string.notification_count))
+                homeId = ID_HOME
 
-            setOnShowListener { model ->
-                binding.fragmentSelected.text = getString(R.string.main_page_selected, getMenuName(model.id))
+                setCount(ID_NOTIFICATION, getString(R.string.notification_count))
+
+                setOnShowListener { model ->
+                    binding.fragmentSelected.text =
+                        getString(R.string.main_page_selected, getMenuName(model.id))
+                }
+
+                setOnClickMenuListener { _ ->
+                    // Handle menu click if needed
+                }
+
+                setOnReselectListener { model ->
+                    Toast.makeText(
+                        this@MainActivity,
+                        getString(R.string.reselected_message, model.id),
+                        Toast.LENGTH_LONG,
+                    ).show()
+
+                    // Celebrate on reselect!
+                    celebrate()
+                }
+
+                show(ID_HOME, false)
             }
-
-            setOnClickMenuListener { _ ->
-                // Handle menu click if needed
-            }
-
-            setOnReselectListener { model ->
-                Toast.makeText(
-                    this@MainActivity, getString(R.string.reselected_message, model.id), Toast.LENGTH_LONG
-                ).show()
-            }
-
-            show(ID_HOME)
+        } catch (e: Exception) {
+            Toast.makeText(this, "SetupUI Error: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
         }
     }
 

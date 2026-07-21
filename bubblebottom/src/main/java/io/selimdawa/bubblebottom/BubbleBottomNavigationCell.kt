@@ -23,10 +23,12 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
-@Suppress("unused")
 class BubbleBottomNavigationCell @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttrs: Int = 0
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttrs: Int = 0,
 ) : RelativeLayout(context, attrs, defStyleAttrs) {
 
     private val iv: ImageView
@@ -63,7 +65,9 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     var icon = 0
         set(value) {
             field = value
-            if (allowDraw) iv.setImageResource(value)
+            if (allowDraw && (value != 0)) {
+                iv.setImageDrawable(DrawableHelper.changeColorDrawableRes(context, value, -2))
+            }
         }
 
     var count: String? = EMPTY_VALUE
@@ -87,16 +91,16 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
             }
         }
 
-    private var iconSize = 48f.dp(context)
+    private var iconSize = 0f
         set(value) {
             field = value
-            if (allowDraw) {
+            if (allowDraw && value > 0f) {
                 iv.updateLayoutParams<FrameLayout.LayoutParams> {
                     it.width = value.toInt()
                     it.height = value.toInt()
                 }
-                iv.pivotX = iconSize / 2f
-                iv.pivotY = iconSize / 2f
+                iv.pivotX = value / 2f
+                iv.pivotY = value / 2f
             }
         }
 
@@ -136,7 +140,7 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
             field = value
             if (!allowDraw) return
 
-            fl.y = (1f - progress) * 18f.dp(context) - 3f.dp(context)
+            fl.y = (1f - progress) * 18f.dp(context) + 13f.dp(context)
             updateIconTint()
 
             val scale = (1f - progress) * (-0.1f) + 1.1f
@@ -155,7 +159,7 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
             val m = 24.dp(context)
             vCircle.x =
                 (1f - progress) * (if (isFromLeft) -m else m) + ((measuredWidth - 48f.dp(context)) / 2f)
-            vCircle.y = (1f - progress) * measuredHeight + 6.dp(context)
+            vCircle.y = (1f - progress) * (measuredHeight - 16.dp(context)) + 22.dp(context)
         }
 
     var isEnabledCell = false
@@ -173,7 +177,7 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
             } else {
                 delayJob?.cancel()
                 delayJob = scope.launch {
-                    delay(200)
+                    delay(200.milliseconds)
                     fl.setBackgroundColor(Color.TRANSPARENT)
                 }
             }
@@ -194,13 +198,14 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
         vCircle = findViewById(R.id.v_circle)
         fl = findViewById(R.id.fl)
 
+        iconSize = 48f.dp(context)
         allowDraw = true
         draw()
     }
 
     private fun draw() {
         if (!allowDraw) return
-        icon = icon
+        if (icon != 0) icon = icon
         count = count
         iconSize = iconSize
         countTextColor = countTextColor
@@ -212,10 +217,12 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
 
     private fun updateIconTint() {
         if (allowDraw) {
-            ImageViewCompat.setImageTintList(
-                iv,
-                ofColorStateList(if (progress == 1f || isEnabledCell) selectedIconColor else defaultIconColor)
-            )
+            val color = if (isEnabledCell) {
+                selectedIconColor
+            } else {
+                ColorHelper.mixTwoColors(selectedIconColor, defaultIconColor, progress)
+            }
+            ImageViewCompat.setImageTintList(iv, ofColorStateList(color))
         }
     }
 
@@ -225,12 +232,12 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
     }
 
     fun disableCell(isAnimate: Boolean = true) {
-        if (isEnabledCell) animateProgress(false, isAnimate)
+        if (isEnabledCell) animateProgress(enableCell = false, isAnimate = isAnimate)
         isEnabledCell = false
     }
 
     fun enableCell(isAnimate: Boolean = true) {
-        if (!isEnabledCell) animateProgress(true, isAnimate)
+        if (!isEnabledCell) animateProgress(enableCell = true, isAnimate = isAnimate)
         isEnabledCell = true
     }
 

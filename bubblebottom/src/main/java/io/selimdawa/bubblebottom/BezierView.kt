@@ -8,7 +8,9 @@ import android.util.AttributeSet
 import android.view.View
 
 class BezierView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttrs: Int = 0
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttrs: Int = 0,
 ) : View(context, attrs, defStyleAttrs) {
 
     enum class CurveType {
@@ -109,15 +111,15 @@ class BezierView @JvmOverloads constructor(
         for (i in 0..10) {
             val startX = innerArray[i * 2]
             val endX = outerArray[i * 2]
-            val startY = innerArray[i * 2 + 1]
-            val endY = outerArray[i * 2 + 1]
-            
+            val startY = innerArray[(i * 2) + 1]
+            val endY = outerArray[(i * 2) + 1]
+
             if (progress <= 1f) {
                 progressArray[i * 2] = calculate(startX, endX)
-                progressArray[i * 2 + 1] = calculate(startY, endY)
+                progressArray[(i * 2) + 1] = calculate(startY, endY)
             } else {
                 progressArray[i * 2] = calculate(endX, startX)
-                progressArray[i * 2 + 1] = calculate(endY, startY)
+                progressArray[(i * 2) + 1] = calculate(endY, startY)
             }
         }
     }
@@ -139,23 +141,23 @@ class BezierView @JvmOverloads constructor(
         when (curveType) {
             CurveType.ROUND -> {
                 bezierOuterWidth = 72f.dp(context)
-                bezierOuterHeight = 8f.dp(context)
+                bezierOuterHeight = 24f.dp(context)
                 bezierInnerWidth = 124f.dp(context)
-                bezierInnerHeight = 16f.dp(context)
+                bezierInnerHeight = 32f.dp(context)
             }
 
             CurveType.SHARP -> {
                 bezierOuterWidth = 48f.dp(context)
-                bezierOuterHeight = 12f.dp(context)
+                bezierOuterHeight = 28f.dp(context)
                 bezierInnerWidth = 96f.dp(context)
-                bezierInnerHeight = 24f.dp(context)
+                bezierInnerHeight = 40f.dp(context)
             }
 
             CurveType.SQUARE -> {
                 bezierOuterWidth = 84f.dp(context)
-                bezierOuterHeight = 4f.dp(context)
+                bezierOuterHeight = 20f.dp(context)
                 bezierInnerWidth = 132f.dp(context)
-                bezierInnerHeight = 12f.dp(context)
+                bezierInnerHeight = 28f.dp(context)
             }
         }
     }
@@ -219,19 +221,22 @@ class BezierView @JvmOverloads constructor(
     private fun calculateInner() {
         val extra = shadowHeight + verticalOffset
         val width = bezierInnerWidth * bezierWidthScale
-        setPoint(innerArray, 0, 0f, bezierInnerHeight + extra)
-        setPoint(innerArray, 1, bezierX - width / 2, bezierInnerHeight + extra)
+        val barTop = bezierInnerHeight + extra
+        val holeBottom = barTop + 40f.dp(context)
+
+        setPoint(innerArray, 0, 0f, barTop)
+        setPoint(innerArray, 1, bezierX - width / 2, barTop)
 
         val cpOffset = if (curveType == CurveType.SHARP) 12f.dp(context) else width / 4
 
-        setPoint(innerArray, 2, bezierX - cpOffset, bezierInnerHeight + extra + waveAmplitude)
-        setPoint(innerArray, 3, bezierX - cpOffset, viewHeight - extra - waveAmplitude)
-        setPoint(innerArray, 4, bezierX, viewHeight - extra)
-        setPoint(innerArray, 5, bezierX + cpOffset, viewHeight - extra - waveAmplitude)
-        setPoint(innerArray, 6, bezierX + cpOffset, bezierInnerHeight + extra + waveAmplitude)
-        setPoint(innerArray, 7, bezierX + width / 2, bezierInnerHeight + extra)
+        setPoint(innerArray, 2, bezierX - cpOffset, barTop + waveAmplitude)
+        setPoint(innerArray, 3, bezierX - cpOffset, holeBottom - waveAmplitude)
+        setPoint(innerArray, 4, bezierX, holeBottom)
+        setPoint(innerArray, 5, bezierX + cpOffset, holeBottom - waveAmplitude)
+        setPoint(innerArray, 6, bezierX + cpOffset, barTop + waveAmplitude)
+        setPoint(innerArray, 7, bezierX + width / 2, barTop)
 
-        setPoint(innerArray, 8, viewWidth, bezierInnerHeight + extra)
+        setPoint(innerArray, 8, viewWidth, barTop)
         setPoint(innerArray, 9, viewWidth, viewHeight)
         setPoint(innerArray, 10, 0f, viewHeight)
     }

@@ -24,7 +24,6 @@
         android:layout_alignParentBottom="true"
         app:mbn_animationDuration="-1"
         app:mbn_animationMode="slide"
-        app:mbn_countTypeface="@string/font_source_sans_pro_semibold"
         app:mbn_hasAnimation="true" />
 
     <!--

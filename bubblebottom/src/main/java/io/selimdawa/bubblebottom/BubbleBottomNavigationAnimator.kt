@@ -13,7 +13,7 @@ import kotlin.math.sin
 class BubbleBottomNavigationAnimator(
     private val scope: CoroutineScope,
     private val bezierView: BezierView,
-    private val cells: List<BubbleBottomNavigationCell>
+    private val cells: List<BubbleBottomNavigationCell>,
 ) {
     private var animationJob: Job? = null
     private var secondAnimationJob: Job? = null
@@ -39,7 +39,7 @@ class BubbleBottomNavigationAnimator(
         val pos = getModelPosition(id)
         val nowPos = getModelPosition(selectedId)
         val dif = abs(pos - (if (nowPos < 0) 0 else nowPos))
-        val d = if (duration != -1L) duration else dif * 100L + 150L
+        val d = if (duration != -1L) duration else (dif * 100L + 150L)
 
         val animDuration = if (hasAnimation) d else 1L
 
@@ -53,6 +53,10 @@ class BubbleBottomNavigationAnimator(
 
         val beforeX = bezierView.bezierX
         val targetX = cell.x + (cell.measuredWidth / 2)
+
+        // Update all cells duration and direction
+        cell.isFromLeft = pos > nowPos
+        cells.forEach { it.duration = d }
 
         // Reset effects
         bezierView.verticalOffset = 0f
@@ -81,6 +85,19 @@ class BubbleBottomNavigationAnimator(
         }
 
         triggerCellAnimations(cell, mode)
+    }
+
+    fun celebrate(mode: AnimationMode) {
+        cells.forEach { triggerCellAnimations(it, mode) }
+    }
+
+    fun jumpTo(cell: BubbleBottomNavigationCell) {
+        cancelAll()
+        bezierView.verticalOffset = 0f
+        bezierView.bezierWidthScale = 1f
+        bezierView.waveAmplitude = 0f
+        bezierView.progress = 0f
+        bezierView.bezierX = cell.x + (cell.measuredWidth / 2)
     }
 
     private fun applyModeEffects(mode: AnimationMode, f: Float) {

@@ -46,6 +46,7 @@
         <attr name="mbn_animationDuration" format="integer" />
         <attr name="mbn_backToHomeEnabled" format="boolean" />
         <attr name="mbn_homeId" format="integer" />
+        <attr name="mbn_defaultSelectedId" format="integer" />
         <!-- Custom Shape Attributes -->
         <attr name="mbn_bezierWidth" format="dimension" />
         <attr name="mbn_bezierHeight" format="dimension" />
