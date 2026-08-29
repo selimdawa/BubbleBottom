@@ -22,19 +22,17 @@ class MainActivity : AppCompatActivity() {
     private val binding by lazy { ActivityMainBinding.inflate(layoutInflater) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
+
         try {
-            enableEdgeToEdge()
-            setContentView(binding.root)
-
-            ViewCompat.setOnApplyWindowInsetsListener(binding.main) { view, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                view.setPadding(
-                    systemBars.left, systemBars.top, systemBars.right, systemBars.bottom
-                )
-                insets
-            }
-
             setupUI()
         } catch (e: Exception) {
             Toast.makeText(this, "CRASH: ${e.message}", Toast.LENGTH_LONG).show()
