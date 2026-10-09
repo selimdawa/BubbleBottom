@@ -1,8 +1,8 @@
+@file:Suppress("unused")
+
 package io.selimdawa.bubblebottom
 
-import android.app.Activity
 import android.content.Context
-import android.content.ContextWrapper
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Parcelable
@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import android.widget.LinearLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import androidx.core.os.BundleCompat
 import androidx.lifecycle.LifecycleOwner
@@ -25,13 +26,10 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import androidx.appcompat.R as AppCompatR
-import com.google.android.material.R as MaterialR
+import kotlin.math.abs
 
 class BubbleBottomNavigation @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0,
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
 ) : FrameLayout(context, attrs, defStyleAttr) {
 
     var models = ArrayList<Model>()
@@ -54,10 +52,6 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     private val _selectedIdFlow = MutableStateFlow(-1)
 
-    private var pendingSelectedId = -1
-    private var pendingEnableAnimation = false
-
-    @Suppress("unused")
     val selectedIdFlow: StateFlow<Int> = _selectedIdFlow.asStateFlow()
 
     var animationMode: AnimationMode = AnimationMode.MORPH
@@ -66,7 +60,6 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     var isBackToHomeEnabled: Boolean = true
     var homeId: Int = -1
-    var defaultSelectedId: Int = -1
 
     var curveType: BezierView.CurveType = BezierView.CurveType.ROUND
         set(value) {
@@ -137,54 +130,45 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     }
 
     private fun initDefaultColors() {
-        try {
-            defaultIconColor = MaterialColors.getColor(
-                context,
-                MaterialR.attr.colorOnSurfaceVariant,
-                ContextCompat.getColor(context, R.color.mbn_default_icon_color)
-            )
-            selectedIconColor = MaterialColors.getColor(
-                context,
-                AppCompatR.attr.colorPrimary,
-                ContextCompat.getColor(context, R.color.mbn_selected_icon_color)
-            )
-            backgroundBottomColor = MaterialColors.getColor(
-                context,
-                MaterialR.attr.colorSurface,
-                ContextCompat.getColor(context, R.color.mbn_background_bottom_color),
-            )
-            circleColor = MaterialColors.getColor(
-                context,
-                MaterialR.attr.colorPrimaryContainer,
-                ContextCompat.getColor(context, R.color.mbn_circle_color)
-            )
-            countTextColor = MaterialColors.getColor(
-                context,
-                MaterialR.attr.colorOnSecondaryContainer,
-                ContextCompat.getColor(context, R.color.mbn_count_text_color)
-            )
-            countBackgroundColor = MaterialColors.getColor(
-                context,
-                MaterialR.attr.colorSecondaryContainer,
-                ContextCompat.getColor(context, R.color.mbn_count_background_color)
-            )
-            rippleColor = MaterialColors.getColor(
-                context,
-                android.R.attr.colorControlHighlight,
-                ContextCompat.getColor(context, R.color.mbn_ripple_color)
-            )
-        } catch (e: Exception) {
-            e.printStackTrace()
-            // Hardcoded fallbacks if theme fails
-            defaultIconColor = 0xFF757575.toInt()
-            selectedIconColor = 0xFF2196F3.toInt()
-            backgroundBottomColor = 0xFFFFFFFF.toInt()
-            circleColor = 0xFFFFFFFF.toInt()
-            countTextColor = 0xFFFFFFFF.toInt()
-            countBackgroundColor = 0xFFFF0000.toInt()
-            rippleColor = 0xFF757575.toInt()
-        }
+        defaultIconColor = resolveColorByName(
+            "colorOnSurfaceVariant", ContextCompat.getColor(context, R.color.mbn_default_icon_color)
+        )
+        selectedIconColor = resolveColorByName(
+            "colorPrimary", ContextCompat.getColor(context, R.color.mbn_selected_icon_color)
+        )
+        backgroundBottomColor = resolveColorByName(
+            "colorSurface", ContextCompat.getColor(context, R.color.mbn_background_bottom_color)
+        )
+        circleColor = resolveColorByName(
+            "colorPrimaryContainer", ContextCompat.getColor(context, R.color.mbn_circle_color)
+        )
+        countTextColor = resolveColorByName(
+            "onSecondaryContainer", ContextCompat.getColor(context, R.color.mbn_count_text_color)
+        )
+        countBackgroundColor = resolveColorByName(
+            "secondaryContainer",
+            ContextCompat.getColor(context, R.color.mbn_count_background_color)
+        )
+        rippleColor = resolveColorByName(
+            "colorControlHighlight", ContextCompat.getColor(context, R.color.mbn_ripple_color)
+        )
         shadowColor = ContextCompat.getColor(context, R.color.mbn_shadow_color)
+    }
+
+    @ColorInt
+    private fun resolveColorByName(name: String, @ColorInt fallback: Int): Int {
+        val attrId = context.resources.getIdentifier(name, "attr", context.packageName)
+        return if (attrId != 0) {
+            MaterialColors.getColor(context, attrId, fallback)
+        } else {
+            // Try with common library package names if needed, or just use appcompat default
+            val appCompatId = context.resources.getIdentifier(name, "attr", "androidx.appcompat")
+            if (appCompatId != 0) {
+                MaterialColors.getColor(context, appCompatId, fallback)
+            } else {
+                fallback
+            }
+        }
     }
 
     private fun setAttributeFromXml(context: Context, attrs: AttributeSet) {
@@ -215,14 +199,9 @@ class BubbleBottomNavigation @JvmOverloads constructor(
                     shadowColor =
                         getColor(R.styleable.BubbleBottomNavigation_mbn_shadowColor, shadowColor)
 
-                    getString(R.styleable.BubbleBottomNavigation_mbn_countTypeface)?.let { path ->
-                        if (path.isNotEmpty()) {
-                            try {
-                                countTypeface = Typeface.createFromAsset(context.assets, path)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        }
+                    getString(R.styleable.BubbleBottomNavigation_mbn_countTypeface)?.let {
+                        if (it.isNotEmpty()) countTypeface =
+                            Typeface.createFromAsset(context.assets, it)
                     }
 
                     hasAnimation = getBoolean(
@@ -247,8 +226,6 @@ class BubbleBottomNavigation @JvmOverloads constructor(
                         R.styleable.BubbleBottomNavigation_mbn_backToHomeEnabled, true
                     )
                     homeId = getInt(R.styleable.BubbleBottomNavigation_mbn_homeId, -1)
-                    defaultSelectedId =
-                        getInt(R.styleable.BubbleBottomNavigation_mbn_defaultSelectedId, -1)
                 } finally {
                     recycle()
                 }
@@ -280,31 +257,18 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-        if ((selectedId == -1) && (pendingSelectedId == -1)) {
+        if (selectedId == -1) {
             bezierView.bezierX = if (layoutDirection == LayoutDirection.RTL) {
                 measuredWidth + 72f.dp(context)
             } else {
                 (-72f).dp(context)
             }
-        }
-    }
-
-    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
-        super.onLayout(changed, left, top, right, bottom)
-        if (pendingSelectedId != -1) {
-            val id = pendingSelectedId
-            val anim = pendingEnableAnimation
-            pendingSelectedId = -1
-            post { show(id, anim) }
-        } else if (selectedId == -1 && defaultSelectedId != -1) {
-            post { show(defaultSelectedId, enableAnimation = false) }
+        } else {
+            show(selectedId, false)
         }
     }
 
     fun add(model: Model) {
-        if (models.isEmpty() && homeId == -1) {
-            homeId = model.id
-        }
         val cell = BubbleBottomNavigationCell(context).apply {
             layoutParams = LinearLayout.LayoutParams(0, heightCell, 1f)
             icon = model.icon
@@ -352,7 +316,7 @@ class BubbleBottomNavigation @JvmOverloads constructor(
         bezierView.color = backgroundBottomColor
     }
 
-    private fun anim(cell: BubbleBottomNavigationCell, id: Int) {
+    private fun anim(cell: BubbleBottomNavigationCell, id: Int, enableAnimation: Boolean = true) {
         isAnimating = true
         animator.animate(
             cell = cell,
@@ -360,34 +324,24 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             selectedId = selectedId,
             mode = animationMode,
             duration = animationDuration,
-            hasAnimation = hasAnimation,
+            hasAnimation = enableAnimation && hasAnimation,
             getModelPosition = ::getModelPosition
         )
         isAnimating = false
-    }
-
-    fun celebrate() {
-        animator.celebrate(animationMode)
+        cell.isFromLeft = getModelPosition(id) > getModelPosition(selectedId)
+        cells.forEach {
+            it.duration = if (animationDuration != -1L) animationDuration else abs(
+                getModelPosition(id) - getModelPosition(selectedId)
+            ) * 100L + 150L
+        }
     }
 
     fun show(id: Int, enableAnimation: Boolean = true) {
-        if (models.isEmpty()) return
-        if (!isLaidOut) {
-            pendingSelectedId = id
-            pendingEnableAnimation = enableAnimation
-            selectedId = id
-            _selectedIdFlow.value = id
-            return
-        }
         models.indices.forEach { i ->
             val model = models[i]
             val cell = cells[i]
             if (model.id == id) {
-                if (enableAnimation) {
-                    anim(cell, id)
-                } else {
-                    animator.jumpTo(cell)
-                }
+                anim(cell, id, enableAnimation)
                 cell.enableCell(enableAnimation)
                 onShowListener(model)
             } else {
@@ -400,10 +354,8 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     fun isShowing(id: Int) = selectedId == id
 
-    @Suppress("unused")
     fun getModelById(id: Int) = models.find { it.id == id }
 
-    @Suppress("unused")
     fun getCellById(id: Int) = cells[getModelPosition(id)]
 
     fun getModelPosition(id: Int) = models.indexOfFirst { it.id == id }
@@ -417,7 +369,6 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     fun clearCount(id: Int) = setCount(id, BubbleBottomNavigationCell.EMPTY_VALUE)
 
-    @Suppress("unused")
     fun clearAllCounts() = models.forEach { clearCount(it.id) }
 
     fun setOnShowListener(listener: IBottomNavigationListener) {
@@ -439,9 +390,8 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     private fun setupBackNavigation() {
         if (!isBackToHomeEnabled) return
-        val activity = findActivity()
-        val dispatcherOwner = activity as? OnBackPressedDispatcherOwner ?: return
-        val lifecycleOwner = activity as? LifecycleOwner ?: return
+        val dispatcherOwner = context as? OnBackPressedDispatcherOwner ?: return
+        val lifecycleOwner = context as? LifecycleOwner ?: return
 
         dispatcherOwner.onBackPressedDispatcher.addCallback(
             lifecycleOwner, object : OnBackPressedCallback(true) {
@@ -451,22 +401,10 @@ class BubbleBottomNavigation @JvmOverloads constructor(
                         show(actualHomeId)
                     } else {
                         isEnabled = false
-                        activity.onBackPressedDispatcher.onBackPressed()
+                        dispatcherOwner.onBackPressedDispatcher.onBackPressed()
                     }
                 }
-            },
-        )
-    }
-
-    private fun findActivity(): Activity? {
-        var context = context
-        while (context is ContextWrapper) {
-            if (context is Activity) {
-                return context
-            }
-            context = context.baseContext
-        }
-        return null
+            })
     }
 
     override fun onDetachedFromWindow() {
