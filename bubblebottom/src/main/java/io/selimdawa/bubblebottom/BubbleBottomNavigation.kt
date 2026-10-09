@@ -1,6 +1,7 @@
 package io.selimdawa.bubblebottom
 
 import android.content.Context
+import android.content.ContextWrapper
 import android.graphics.Typeface
 import android.os.Bundle
 import android.os.Parcelable
@@ -21,9 +22,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlin.math.abs
 
 class BubbleBottomNavigation @JvmOverloads constructor(
@@ -48,17 +46,24 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var animator: BubbleBottomNavigationAnimator
 
-    private val _selectedIdFlow = MutableStateFlow(-1)
-
-    val selectedIdFlow: StateFlow<Int> = _selectedIdFlow.asStateFlow()
-
     var animationMode: AnimationMode = AnimationMode.MORPH
 
     var animationDuration: Long = -1L
 
     var isBackToHomeEnabled: Boolean = true
+        set(value) {
+            field = value
+            updateBackPressedCallbackState()
+        }
+
     var homeId: Int = -1
+        set(value) {
+            field = value
+            updateBackPressedCallbackState()
+        }
+
     private var initialSelectedId: Int = -1
+    private var onBackPressedCallback: OnBackPressedCallback? = null
 
     var curveType: BezierView.CurveType = BezierView.CurveType.ROUND
         set(value) {
@@ -155,6 +160,7 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     }
 
     @ColorInt
+    @Suppress("DiscouragedApi")
     private fun resolveColorByName(name: String, @ColorInt fallback: Int): Int {
         val attrId = context.resources.getIdentifier(name, "attr", context.packageName)
         return if (attrId != 0) {
@@ -321,6 +327,7 @@ class BubbleBottomNavigation @JvmOverloads constructor(
         llCells.addView(cell)
         cells.add(cell)
         models.add(model)
+        updateBackPressedCallbackState()
     }
 
     private fun updateAllIfAllowDraw() {
@@ -375,14 +382,10 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             }
         }
         selectedId = id
-        _selectedIdFlow.value = id
+        updateBackPressedCallbackState()
     }
 
     fun isShowing(id: Int) = selectedId == id
-
-    fun getModelById(id: Int) = models.find { it.id == id }
-
-    fun getCellById(id: Int) = cells[getModelPosition(id)]
 
     fun getModelPosition(id: Int) = models.indexOfFirst { it.id == id }
 
@@ -392,10 +395,6 @@ class BubbleBottomNavigation @JvmOverloads constructor(
         models[pos].count = count
         cells[pos].count = count
     }
-
-    fun clearCount(id: Int) = setCount(id, BubbleBottomNavigationCell.EMPTY_VALUE)
-
-    fun clearAllCounts() = models.forEach { clearCount(it.id) }
 
     fun setOnShowListener(listener: IBottomNavigationListener) {
         onShowListener = listener
@@ -409,36 +408,65 @@ class BubbleBottomNavigation @JvmOverloads constructor(
         onReselectListener = listener
     }
 
+    fun getActualHomeId(): Int {
+        return when {
+            homeId != -1 -> homeId
+            initialSelectedId != -1 -> initialSelectedId
+            else -> models.firstOrNull()?.id ?: -1
+        }
+    }
+
+    private fun isNotAtHome(): Boolean {
+        val actualHomeId = getActualHomeId()
+        return actualHomeId != -1 && selectedId != actualHomeId
+    }
+
+    private fun updateBackPressedCallbackState() {
+        onBackPressedCallback?.isEnabled = isBackToHomeEnabled && isNotAtHome()
+    }
+
+    private fun getDispatcherAndLifecycleOwner(): Pair<OnBackPressedDispatcherOwner, LifecycleOwner>? {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper) {
+            if (ctx is OnBackPressedDispatcherOwner) {
+                return Pair(ctx, ctx as LifecycleOwner)
+            }
+            ctx = ctx.baseContext
+        }
+        return null
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
         setupBackNavigation()
     }
 
     private fun setupBackNavigation() {
-        if (!isBackToHomeEnabled) return
-        val dispatcherOwner = context as? OnBackPressedDispatcherOwner ?: return
-        val lifecycleOwner = context as? LifecycleOwner ?: return
+        if (onBackPressedCallback != null) {
+            updateBackPressedCallbackState()
+            return
+        }
+        val owners = getDispatcherAndLifecycleOwner() ?: return
+        val dispatcherOwner = owners.first
+        val lifecycleOwner = owners.second
 
-        dispatcherOwner.onBackPressedDispatcher.addCallback(
-            lifecycleOwner, object : OnBackPressedCallback(true) {
-                override fun handleOnBackPressed() {
-                    val actualHomeId = when {
-                        homeId != -1 -> homeId
-                        initialSelectedId != -1 -> initialSelectedId
-                        else -> models.firstOrNull()?.id ?: -1
-                    }
-                    if (selectedId != actualHomeId && actualHomeId != -1) {
-                        show(actualHomeId)
-                    } else {
-                        isEnabled = false
-                        dispatcherOwner.onBackPressedDispatcher.onBackPressed()
-                    }
+        val callback = object : OnBackPressedCallback(isBackToHomeEnabled && isNotAtHome()) {
+            override fun handleOnBackPressed() {
+                val actualHomeId = getActualHomeId()
+                if (actualHomeId != -1 && selectedId != actualHomeId) {
+                    show(actualHomeId)
                 }
-            })
+            }
+        }
+        dispatcherOwner.onBackPressedDispatcher.addCallback(lifecycleOwner, callback)
+        onBackPressedCallback = callback
+        updateBackPressedCallbackState()
     }
 
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
+        onBackPressedCallback?.remove()
+        onBackPressedCallback = null
         scope.cancel()
     }
 
@@ -456,5 +484,6 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             superState = BundleCompat.getParcelable(state, "superState", Parcelable::class.java)
         }
         super.onRestoreInstanceState(superState)
+        updateBackPressedCallbackState()
     }
 }
