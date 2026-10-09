@@ -24,7 +24,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-@Suppress("unused")
 class BubbleBottomNavigationCell @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttrs: Int = 0
 ) : RelativeLayout(context, attrs, defStyleAttrs) {
@@ -79,9 +78,9 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
                     value.isNullOrEmpty() -> ""
                     value.toIntOrNull() != null -> {
                         val num = value.toInt()
-                        if (num > 99) "99+" else num.toString()
+                        if (num > 99) "+99" else num.toString()
                     }
-                    value.length > 2 -> "99+"
+                    value.length > 2 -> "+99"
                     else -> value
                 }
                 tvCount.apply {

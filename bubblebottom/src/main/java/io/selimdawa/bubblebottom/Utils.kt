@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package io.selimdawa.bubblebottom
 
 import android.animation.TimeInterpolator

@@ -32,7 +32,8 @@ class BubbleBottomNavigationAnimator(
         mode: AnimationMode,
         duration: Long,
         hasAnimation: Boolean,
-        getModelPosition: (Int) -> Int
+        getModelPosition: (Int) -> Int,
+        getCellCenterX: (Int) -> Float
     ) {
         cancelAll()
 
@@ -52,7 +53,7 @@ class BubbleBottomNavigationAnimator(
         }
 
         val beforeX = bezierView.bezierX
-        val targetX = cell.x + (cell.measuredWidth / 2)
+        val targetX = getCellCenterX(pos)
 
         // Reset effects
         bezierView.verticalOffset = 0f

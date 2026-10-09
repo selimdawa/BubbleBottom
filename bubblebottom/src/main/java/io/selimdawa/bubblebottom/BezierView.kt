@@ -111,7 +111,7 @@ class BezierView @JvmOverloads constructor(
             val endX = outerArray[i * 2]
             val startY = innerArray[i * 2 + 1]
             val endY = outerArray[i * 2 + 1]
-            
+
             if (progress <= 1f) {
                 progressArray[i * 2] = calculate(startX, endX)
                 progressArray[i * 2 + 1] = calculate(startY, endY)

@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package io.selimdawa.bubblebottom
 
 import android.content.Context
@@ -60,6 +58,7 @@ class BubbleBottomNavigation @JvmOverloads constructor(
 
     var isBackToHomeEnabled: Boolean = true
     var homeId: Int = -1
+    private var initialSelectedId: Int = -1
 
     var curveType: BezierView.CurveType = BezierView.CurveType.ROUND
         set(value) {
@@ -268,6 +267,29 @@ class BubbleBottomNavigation @JvmOverloads constructor(
         }
     }
 
+    override fun onLayout(changed: Boolean, left: Int, top: Int, right: Int, bottom: Int) {
+        super.onLayout(changed, left, top, right, bottom)
+        if (selectedId != -1) {
+            val pos = getModelPosition(selectedId)
+            if (pos != -1 && !isAnimating) {
+                bezierView.bezierX = getCellCenterX(pos)
+            }
+        }
+    }
+
+    fun getCellCenterX(pos: Int): Float {
+        if (pos < 0 || pos >= cells.size) return 0f
+        val cell = cells[pos]
+        if (cell.width > 0 && (pos == 0 || cell.x > 0)) {
+            return cell.x + cell.width / 2f
+        }
+        val w = if (measuredWidth > 0) measuredWidth.toFloat() else width.toFloat()
+        if (w <= 0f || cells.isEmpty()) return 0f
+        val cellWidth = w / cells.size
+        val effectivePos = if (layoutDirection == LayoutDirection.RTL) cells.size - 1 - pos else pos
+        return (effectivePos + 0.5f) * cellWidth
+    }
+
     fun add(model: Model) {
         val cell = BubbleBottomNavigationCell(context).apply {
             layoutParams = LinearLayout.LayoutParams(0, heightCell, 1f)
@@ -325,7 +347,8 @@ class BubbleBottomNavigation @JvmOverloads constructor(
             mode = animationMode,
             duration = animationDuration,
             hasAnimation = enableAnimation && hasAnimation,
-            getModelPosition = ::getModelPosition
+            getModelPosition = ::getModelPosition,
+            getCellCenterX = ::getCellCenterX
         )
         isAnimating = false
         cell.isFromLeft = getModelPosition(id) > getModelPosition(selectedId)
@@ -337,6 +360,9 @@ class BubbleBottomNavigation @JvmOverloads constructor(
     }
 
     fun show(id: Int, enableAnimation: Boolean = true) {
+        if (initialSelectedId == -1 && id != -1) {
+            initialSelectedId = id
+        }
         models.indices.forEach { i ->
             val model = models[i]
             val cell = cells[i]
@@ -396,7 +422,11 @@ class BubbleBottomNavigation @JvmOverloads constructor(
         dispatcherOwner.onBackPressedDispatcher.addCallback(
             lifecycleOwner, object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    val actualHomeId = if (homeId != -1) homeId else models.firstOrNull()?.id ?: -1
+                    val actualHomeId = when {
+                        homeId != -1 -> homeId
+                        initialSelectedId != -1 -> initialSelectedId
+                        else -> models.firstOrNull()?.id ?: -1
+                    }
                     if (selectedId != actualHomeId && actualHomeId != -1) {
                         show(actualHomeId)
                     } else {
