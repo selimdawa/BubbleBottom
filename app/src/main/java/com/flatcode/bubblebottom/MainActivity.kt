@@ -8,14 +8,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.flatcode.bubblebottom.databinding.ActivityMainBinding
-import io.selimdawa.bubblebottom.BubbleBottomNavigation
 import io.selimdawa.bubblebottom.Model
 
 class MainActivity : AppCompatActivity() {
 
     companion object {
-        private const val ID_HOME = 1
-        private const val ID_EXPLORE = 2
+        private const val ID_EXPLORE = 1
+        private const val ID_HOME = 2
         private const val ID_MESSAGE = 3
         private const val ID_NOTIFICATION = 4
         private const val ID_ACCOUNT = 5
@@ -42,8 +41,8 @@ class MainActivity : AppCompatActivity() {
             Typeface.createFromAsset(assets, getString(R.string.font_source_sans_pro_regular))
 
         binding.bottomNavigation.apply {
-            add(Model(ID_HOME, R.drawable.ic_home))
             add(Model(ID_EXPLORE, R.drawable.ic_explore))
+            add(Model(ID_HOME, R.drawable.ic_home))
             add(Model(ID_MESSAGE, R.drawable.ic_message))
             add(Model(ID_NOTIFICATION, R.drawable.ic_notification))
             add(Model(ID_ACCOUNT, R.drawable.ic_account))
@@ -51,7 +50,8 @@ class MainActivity : AppCompatActivity() {
             setCount(ID_NOTIFICATION, getString(R.string.notification_count))
 
             setOnShowListener { model ->
-                binding.fragmentSelected.text = getString(R.string.main_page_selected, getMenuName(model.id))
+                binding.fragmentSelected.text =
+                    getString(R.string.main_page_selected, getMenuName(model.id))
             }
 
             setOnClickMenuListener { _ ->
@@ -60,7 +60,9 @@ class MainActivity : AppCompatActivity() {
 
             setOnReselectListener { model ->
                 Toast.makeText(
-                    this@MainActivity, getString(R.string.reselected_message, model.id), Toast.LENGTH_LONG
+                    this@MainActivity,
+                    getString(R.string.reselected_message, model.id),
+                    Toast.LENGTH_LONG
                 ).show()
             }
 
@@ -70,8 +72,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun getMenuName(id: Int): String {
         val resId = when (id) {
-            ID_HOME -> R.string.menu_home
             ID_EXPLORE -> R.string.menu_explore
+            ID_HOME -> R.string.menu_home
             ID_MESSAGE -> R.string.menu_message
             ID_NOTIFICATION -> R.string.menu_notification
             ID_ACCOUNT -> R.string.menu_account

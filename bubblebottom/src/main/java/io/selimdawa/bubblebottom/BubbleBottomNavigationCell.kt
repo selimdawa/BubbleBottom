@@ -75,12 +75,19 @@ class BubbleBottomNavigationCell @JvmOverloads constructor(
                 tvCount.text = ""
                 tvCount.visibility = INVISIBLE
             } else {
-                val displayCount =
-                    if ((value?.length ?: 0) >= 3) value?.substring(0, 1) + ".." else value
+                val displayCount = when {
+                    value.isNullOrEmpty() -> ""
+                    value.toIntOrNull() != null -> {
+                        val num = value.toInt()
+                        if (num > 99) "99+" else num.toString()
+                    }
+                    value.length > 2 -> "99+"
+                    else -> value
+                }
                 tvCount.apply {
                     text = displayCount
                     visibility = VISIBLE
-                    val scale = if (displayCount.isNullOrEmpty()) 0.5f else 1f
+                    val scale = if (displayCount.isEmpty()) 0.5f else 1f
                     scaleX = scale
                     scaleY = scale
                 }
